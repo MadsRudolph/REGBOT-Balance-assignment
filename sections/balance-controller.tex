@@ -20,22 +20,127 @@ With the inner wheel-speed loop of Task~\ref{sec:wheel-speed} closed, the plant 
     \caption{Plant from velocity reference to tilt angle, $G_{tilt}(s)$.}
 \end{figure}
 
-\subsection{Controller Design}
-% TODO — document PILead + post-integrator design.
-% Parameters: $N_i$, $\alpha$, $\tau_d$, $\tau_i$, $K_P$, $\gamma_M$, $\omega_c$.
-% Include the phase contribution from the post-integrator in calculations.
+\subsection{Controller Design — Lecture 10 Method 2}
+We follow Method~2 from Lecture~10: (i) decide $\mathrm{sign}(K_{PS})$ from a Nyquist check, (ii) add a post-integrator to shape $|G|$ into a monotonically decreasing form, (iii) design an outer PI-Lead on the stabilised plant, (iv) verify the closed loop.
 
-\subsection{Stability Analysis (Nyquist)}
-% TODO — Nyquist plot showing one CCW encirclement of -1 (since P = 1).
+\paragraph{Step 1 — Nyquist sign check.}
+$G_{tilt}$ has positive DC gain ($+5.04\cdot10^{-4}\,\mathrm{rad/(m/s)}$) and $P = 1$ right-half-plane pole. The Nyquist criterion requires $N = -P = -1$ (one counter-clockwise encirclement of $(-1,0)$), which a positive $K_{PS}$ cannot provide. We therefore set $\mathrm{sign}(K_{PS}) = -1$ and absorb the minus sign into the post-integrator.
+
+\paragraph{Step 2 — Post-integrator.}
+Locate the peak of $|G_{tilt}|$ on the Bode magnitude curve and place the PI zero there:
+\begin{equation}
+    |G_{tilt}|_{\max} = 0.588 \quad \text{at} \quad \omega_{\mathrm{peak}} = 5.95\,\mathrm{rad/s}
+    \;\Longrightarrow\;
+    \tau_{i,\mathrm{post}} = \frac{1}{\omega_{\mathrm{peak}}} = 0.1682\,\mathrm{s}.
+\end{equation}
+The stabilised plant used for outer-loop design is
+\begin{equation}
+    G_{tilt,\mathrm{post}}(s)
+    = -\,C_{PI,\mathrm{post}}(s)\,G_{tilt}(s),
+    \qquad
+    C_{PI,\mathrm{post}}(s) = \frac{\tau_{i,\mathrm{post}}\,s + 1}{\tau_{i,\mathrm{post}}\,s}.
+\end{equation}
+
+\begin{figure}[H]
+    \centering
+    \begin{subfigure}[t]{0.48\linewidth}
+        \includegraphics[width=\linewidth]{images/regbot_task2_bode_post.png}
+        \caption{$G_{tilt}$ (blue) vs.\ $G_{tilt,\mathrm{post}}$ (orange). After the post-integrator the magnitude is monotonically decreasing beyond $\omega_{\mathrm{peak}}$.}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[t]{0.48\linewidth}
+        \includegraphics[width=\linewidth]{images/regbot_task2_nyquist_post.png}
+        \caption{Nyquist of $G_{tilt,\mathrm{post}}$. One CCW encirclement of $(-1,0)$, matching $P = 1$.}
+    \end{subfigure}
+    \caption{Stabilisation via the post-integrator (Method~2 Step~2).}
+\end{figure}
+
+\paragraph{Step 3 — Outer PI-Lead on $G_{tilt,\mathrm{post}}$.}
+Specifications: $\omega_c = 15\,\mathrm{rad/s}$, $\gamma_M = 60^{\circ}$, $N_i = 3$.
+
+The PI zero is placed at $\omega_c/N_i$:
+\begin{equation}
+    \tau_i = \frac{N_i}{\omega_c} = 0.200\,\mathrm{s},
+    \qquad
+    C_{PI}(s) = \frac{\tau_i\,s + 1}{\tau_i\,s}.
+\end{equation}
+
+Phase balance at $\omega_c$:
+\begin{equation}
+    \phi_{\mathrm{Lead}}
+    = -180^{\circ} + \gamma_M - \angle G_{tilt,\mathrm{post}}(j\omega_c) - \angle C_{PI}(j\omega_c),
+\end{equation}
+with the numerical values
+\begin{align*}
+    \angle G_{tilt,\mathrm{post}}(j\omega_c) &= -165.4^{\circ}, \\
+    \angle C_{PI}(j\omega_c) = -\arctan(1/N_i) &= -18.43^{\circ}, \\
+    \phi_{\mathrm{Lead}} &= +63.8^{\circ}.
+\end{align*}
+
+The Lead is realised through the gyro measurement $\dot\theta = s\theta$, avoiding the filter pole of a proper Lead:
+\begin{equation}
+    (\tau_d\,s + 1)\,\theta = \tau_d\,\dot\theta + \theta,
+    \qquad
+    \tau_d = \frac{\tan\phi_{\mathrm{Lead}}}{\omega_c} = \frac{\tan 63.8^{\circ}}{15} = 0.1355\,\mathrm{s}.
+\end{equation}
+
+The loop gain is chosen from $|L(j\omega_c)| = 1$:
+\begin{equation}
+    \bigl|C_{PI}(j\omega_c)\,C_{\mathrm{Lead}}(j\omega_c)\,G_{tilt,\mathrm{post}}(j\omega_c)\bigr| = 0.879,
+    \qquad
+    K_P = \frac{1}{0.879} = 1.137.
+\end{equation}
+
+Gathering the four blocks, the full controller from pitch measurement to $v_{\mathrm{ref}}$ is
+\begin{equation}
+    C_\mathrm{total}(s)
+    = K_P\cdot
+      \underbrace{\frac{-(\tau_{i,\mathrm{post}}s + 1)}{\tau_{i,\mathrm{post}}s}}_{\text{sign + post-integrator}}\cdot
+      \underbrace{\frac{\tau_i s + 1}{\tau_i s}}_{\text{outer PI}}\cdot
+      \underbrace{(\tau_d s + 1)}_{\text{Lead (gyro)}}.
+\end{equation}
+
+\paragraph{Step 4 — Closed-loop verification.}
+From \texttt{margin(L\_tilt)}: achieved $\omega_c = 15.0\,\mathrm{rad/s}$, $\gamma_M = 60.0^{\circ}$, $GM = -4.6\,\mathrm{dB}$. A negative gain margin is expected here: for plants with $P = 1$ the gain margin reported by \texttt{margin} is a \emph{lower} bound on $|K|$ rather than an upper bound. All closed-loop poles lie in the left half plane.
+
+\begin{table}[H]
+    \centering
+    \caption{Final design parameters for Task~2.}
+    \begin{tabular}{@{}lll@{}}
+        \toprule
+        Parameter & Symbol & Value \\
+        \midrule
+        Target crossover          & $\omega_c$            & $15\,\mathrm{rad/s}$ \\
+        Target phase margin       & $\gamma_M$            & $60^{\circ}$ \\
+        PI zero ratio             & $N_i$                 & $3$ \\
+        Post-integrator           & $\tau_{i,\mathrm{post}}$ & $0.1682\,\mathrm{s}$ \\
+        Outer PI                  & $\tau_i$              & $0.200\,\mathrm{s}$ \\
+        Lead (gyro)               & $\tau_d$              & $0.1355\,\mathrm{s}$ \\
+        Loop gain                 & $K_P$                 & $1.137$ \\
+        \bottomrule
+    \end{tabular}
+\end{table}
 
 \subsection{Bode Plot (Open-Loop)}
-% TODO
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.7\linewidth]{images/regbot_task2_loop_bode.png}
+    \caption{Open-loop Bode of $L(s) = K_P\,C_{PI}(s)\,C_{\mathrm{Lead}}(s)\,G_{tilt,\mathrm{post}}(s)$. Crossover at $\omega_c = 15\,\mathrm{rad/s}$ with $\gamma_M = 60^{\circ}$.}
+    \label{fig:task2_loop_bode}
+\end{figure}
 
 \subsection{Simulation Results}
-% TODO
+The balance controller is wired in Simulink so that the gyro-based Lead is combined with pitch \emph{before} the error sum (multiplicative Lead in series). Tested with $\theta_0 = 10^{\circ}$ initial tilt and no external push, the full non-linear model recovers within about one second, and the motor voltage stays well inside the $\pm 9\,\mathrm{V}$ saturation limit.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\linewidth]{images/regbot_task2_sim_recovery_10deg.png}
+    \caption{Simulink recovery from $\theta_0 = 10^{\circ}$. Yellow: pitch in radians ($0.175\,\mathrm{rad} \to 0$). Blue: motor voltage in volts (peak $\approx 1.3\,\mathrm{V}$, well below the $\pm 9\,\mathrm{V}$ limit).}
+    \label{fig:task2_sim_recovery}
+\end{figure}
 
 \subsection{REGBOT Experiment}
 % TODO — mission script and step response from physical REGBOT.
 
 \subsection{Comments}
-% TODO
+% TODO — comparison sim vs. experiment once REGBOT test is done.
