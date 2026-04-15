@@ -2,63 +2,40 @@
 \label{sec:balance}
 
 \subsection{Plant Transfer Function}
-% The balance plant (angle/tilt dynamics). This is the open-loop
-% unstable part -- mention the RHP pole.
+With the inner wheel-speed loop of Task~\ref{sec:wheel-speed} closed, the plant seen by the balance controller is identified by linearising the Simulink model from the velocity reference \texttt{/vel\_ref} to the tilt-angle output (port~1 of the \texttt{/robot with balance} subsystem). The resulting transfer function $G_{tilt}(s)$ is seventh order and open-loop unstable, with one pole in the right-half plane near $+8.7\,\mathrm{rad/s}$ corresponding to the inverted-pendulum falling mode.
 
-% TODO: Fill in.
+\begin{figure}[H]
+    \centering
+    \begin{subfigure}[t]{0.48\linewidth}
+        \includegraphics[width=\linewidth]{images/regbot_Gtilt_bode.png}
+        \caption{Bode plot of $G_{tilt}$.}
+        \label{fig:gtilt_bode}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[t]{0.48\linewidth}
+        \includegraphics[width=\linewidth]{images/regbot_Gtilt_pzmap_zoom.png}
+        \caption{Pole-zero map (zoom). The orange ring marks the single RHP pole.}
+        \label{fig:gtilt_pz}
+    \end{subfigure}
+    \caption{Plant from velocity reference to tilt angle, $G_{tilt}(s)$.}
+\end{figure}
 
 \subsection{Controller Design}
-% PILead + post-integrator. Explain why the post-integrator is needed.
+% TODO — document PILead + post-integrator design.
 % Parameters: $N_i$, $\alpha$, $\tau_d$, $\tau_i$, $K_P$, $\gamma_M$, $\omega_c$.
 % Include the phase contribution from the post-integrator in calculations.
 
-% TODO: Fill in.
-
 \subsection{Stability Analysis (Nyquist)}
-% Since the balance plant has an RHP pole, apply the full Nyquist
-% criterion Z = N + P. For each RHP pole, require one CCW encirclement of -1.
-
-% \begin{figure}[H]
-%     \centering
-%     % \includegraphics[width=0.8\linewidth]{images/task2_nyquist.png}
-%     \caption{Nyquist plot showing CCW encirclement of -1 for stabilisation.}
-%     \label{fig:task2_nyquist}
-% \end{figure}
+% TODO — Nyquist plot showing one CCW encirclement of -1 (since P = 1).
 
 \subsection{Bode Plot (Open-Loop)}
-% Open-loop Bode plot showing phase margin with the post-integrator.
-
-% \begin{figure}[H]
-%     \centering
-%     % \includegraphics[width=0.8\linewidth]{images/task2_bode.png}
-%     \caption{Open-loop Bode plot for balance controller.}
-%     \label{fig:task2_bode}
-% \end{figure}
+% TODO
 
 \subsection{Simulation Results}
-% Closed-loop step response from Simulink.
-
-% \begin{figure}[H]
-%     \centering
-%     % \includegraphics[width=0.8\linewidth]{images/task2_step_sim.png}
-%     \caption{Simulated closed-loop response, balance.}
-%     \label{fig:task2_step_sim}
-% \end{figure}
+% TODO
 
 \subsection{REGBOT Experiment}
-% Mission:
-% \begin{verbatim}
-% vel=0, bal=1, log=15 : time=...
-% \end{verbatim}
-
-% \begin{figure}[H]
-%     \centering
-%     % \includegraphics[width=0.8\linewidth]{images/task2_step_regbot.png}
-%     \caption{Measured response from REGBOT, balance.}
-%     \label{fig:task2_step_regbot}
-% \end{figure}
+% TODO — mission script and step response from physical REGBOT.
 
 \subsection{Comments}
-% Comparison between simulation and experiment.
-
-% TODO: Fill in.
+% TODO

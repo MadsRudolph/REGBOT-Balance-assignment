@@ -1,18 +1,21 @@
 \section{Control Architecture}
 \label{sec:architecture}
 
-% A few lines describing the overall cascaded control architecture used:
-% - Inner loop: wheel speed (Task 1)
-% - Middle loop: balance (Task 2)
-% - Outer loops: velocity (Task 3) and position (Task 4)
-% Consider a block diagram showing how the loops are nested.
+The REGBOT is controlled using a \textbf{cascaded} (nested) control structure. An outer loop generates the reference for the next inner loop, and the innermost loop commands the motor voltage. From inside out:
 
-% TODO: Fill in.
+\begin{enumerate}
+    \item \textbf{Wheel-speed loop} (Task~\ref{sec:wheel-speed}) --- a PI controller that converts a velocity reference into motor voltage, using the Day~5 voltage-to-velocity transfer function as its plant.
+    \item \textbf{Balance loop} (Task~\ref{sec:balance}) --- a PILead controller with a post-integrator that stabilises the inverted-pendulum dynamics. Its output is the velocity reference fed to the wheel-speed loop.
+    \item \textbf{Velocity loop} (Task~\ref{sec:velocity}) --- an outer loop that adjusts the balance reference to track a commanded forward speed.
+    \item \textbf{Position loop} (Task~\ref{sec:position}) --- the outermost loop that drives the robot to a target position by commanding the velocity reference.
+\end{enumerate}
 
-% Example block diagram (placeholder):
-% \begin{figure}[H]
-%     \centering
-%     % \includegraphics[width=0.9\linewidth]{images/control_architecture.png}
-%     \caption{Cascaded control architecture for REGBOT balance.}
-%     \label{fig:architecture}
-% \end{figure}
+The plant for each outer controller is the \emph{closed-loop} response of the inner system, which we identify by linearising the Simulink model around the equilibrium with \texttt{linearize()}. In particular the balance plant is identified from the velocity reference to the tilt angle with the wheel-speed loop closed inside the model.
+
+Two plant transfer functions identified directly from the Simulink model are used throughout the report:
+\begin{itemize}
+    \item $G_{wv}(s)$: motor voltage to wheel velocity (full open-loop plant, including the unstable tilt dynamics).
+    \item $G_{tilt}(s)$: velocity reference to tilt angle (the plant seen by the balance controller, with the inner velocity loop closed).
+\end{itemize}
+
+Both identified plants contain exactly one right-half-plane (RHP) pole around $+8.7$--$+10.6\,\mathrm{rad/s}$, which is the inverted-pendulum falling mode. By the Nyquist stability criterion $Z = N + P$, a stable closed-loop requires one counter-clockwise encirclement of the critical point $-1$.
