@@ -79,7 +79,38 @@ Table~\ref{tab:task1_results} reports the design and achieved values. The open-l
 \subsection{Simulink Implementation}
 The designed gains are assigned to the Simulink starter model variables \texttt{Kpwv = 3.31} and \texttt{tiwv = 0.10}\,s, replacing the default sample values provided with the model. This ensures the inner velocity loop in the Simscape Multibody model uses the Task 1 design for all subsequent experiments.
 
-\subsection{Comments}
-The achieved phase margin of $121.6^\circ$ is far above the $60^\circ$ specification, making the controller very robust but slightly conservative. A higher crossover frequency would give a faster response at the expense of phase margin. The current design is intentionally conservative to make the inner loop predictable for the outer balance controller, and the step response in Figure~\ref{fig:task1_step} shows a rise time of roughly $80\,\mathrm{ms}$ with no overshoot.
+\subsection{REGBOT Experiment}
+The wheel-speed controller was tested on the physical robot in isolation (Test~0 in the group test plan). The robot was laid on its side with balance disabled (\texttt{bal=0}), and a $0.3\,\mathrm{m/s}$ step was commanded via the mission line \texttt{bal=0, vel=0.3, log=15 : time=3}. Figure~\ref{fig:task1_hw_step} shows the three-second log.
 
-REGBOT experiment data will be added after the physical test.
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.85\linewidth]{images/test0_wheel_speed_2026-04-21.png}
+    \caption{Task 1 physical-robot step response (Test~0). Top: commanded velocity (black, dashed) and measured left/right wheel velocities. Middle: motor voltages. Bottom: tracking error.}
+    \label{fig:task1_hw_step}
+\end{figure}
+
+Quantitative comparison with the design is collected in Table~\ref{tab:task1_hw_results}. All four pass criteria are met.
+
+\begin{table}[H]
+    \centering
+    \begin{tabular}{l|c|c}
+        \textbf{Metric} & \textbf{Specification} & \textbf{Measured} \\
+        \hline
+        Time to reach $0.27\,\mathrm{m/s}$      & $\sim 0.3\,\mathrm{s}$   & $0.329\,\mathrm{s}$ \\
+        Steady-state error (left / right)       & $\approx 0$              & $-0.003$ / $-0.004\,\mathrm{m/s}$ ($\approx 1\,\%$) \\
+        Left vs.\ right mean agreement          & $< 5\,\%$                & $0.36\,\%$ \\
+        Peak motor voltage                      & $< \pm 8\,\mathrm{V}$    & $2.06\,\mathrm{V}$ \\
+    \end{tabular}
+    \caption{Task 1 hardware test (Test~0) results versus spec.}
+    \label{tab:task1_hw_results}
+\end{table}
+
+\subsection{Comments}
+The achieved phase margin of $121.6^\circ$ is far above the $60^\circ$ specification, making the controller very robust but slightly conservative. A higher crossover frequency would give a faster response at the expense of phase margin. The design is intentionally conservative to make the inner loop predictable for the outer balance controller, and the measured rise time of $\approx 0.33\,\mathrm{s}$ to reach $0.27\,\mathrm{m/s}$ on the real robot matches the design closely.
+
+Two small observations from the hardware test:
+
+\begin{itemize}
+    \item The steady-state voltage is $\approx 1.8\,\mathrm{V}$ to hold $0.3\,\mathrm{m/s}$, whereas the Day~5 black-box model would predict $0.3/0.374 \approx 0.8\,\mathrm{V}$. The factor-of-two difference is consistent with real friction (bearings, gearbox, air) that the Day~5 identification, done while rolling freely on a flat surface, does not fully capture. The PI integrator absorbs this as an input-referred disturbance, so the steady-state error remains near zero.
+    \item The left and right motors agree to $0.36\,\%$ in mean velocity, so no per-wheel gain trim is needed.
+\end{itemize>

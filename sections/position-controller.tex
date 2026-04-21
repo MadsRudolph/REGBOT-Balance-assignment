@@ -75,21 +75,46 @@ The loop gain is set by $|L(j\omega_c)| = 1$:
 \end{figure}
 
 \subsection{REGBOT Experiment}
-\emph{Physical test pending.} The test sequence planned is:
-\begin{enumerate}[label=(\alph*)]
-    \item Robot stands still
-    \item Robot finds the balance
-    \item Robot moves 2\,m with maximum speed exceeding 0.7\,m/s
-    \item Robot stops
-\end{enumerate}
-Mission script:
+The physical test used the assignment mission
 \begin{verbatim}
-    vel=0, bal=1, log=15 : time=2
-    topos=2, vel=1.2 : time=10
+vel=0, bal=1, log=15 : time=2
+topos=2, vel=1.2 : time=10
 \end{verbatim}
+with the Group-47 gains loaded from the group configuration file. The robot was placed at the start of a $\approx 3\,\mathrm{m}$ clear corridor, and the log captured the full $12\,\mathrm{s}$ sequence (2\,s prep + 10\,s move). The result is shown in Figure~\ref{fig:task4_hw_step}.
 
-\subsection{XY-Plane Motion}
-\emph{Plot pending physical run.} The XY-plane figure required by the assignment will be produced from the logged data once the physical 2\,m move is recorded.
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.88\linewidth]{images/test4_position_2m_2026-04-21.png}
+    \caption{Task~4 hardware test (Test~4). From top: $x$-position with target line and \texttt{topos} command marker; wheel velocities with mean $\text{vel}_{\text{ref}}$ and the $0.7\,\mathrm{m/s}$ spec floor; tilt angle; motor voltages. The position command fires at $t = 2\,\mathrm{s}$, the robot leans forward to accelerate ($+25^{\circ}$ peak), peak wheel velocity reaches $1.01\,\mathrm{m/s}$, and position arrives within $5\,\mathrm{cm}$ of target at $t = 9.07\,\mathrm{s}$.}
+    \label{fig:task4_hw_step}
+\end{figure}
+
+Key measured values against specification are collected in Table~\ref{tab:task4_hw_results}. All assignment criteria are met.
+
+\begin{table}[H]
+    \centering
+    \begin{tabular}{l|c|c}
+        \textbf{Metric} & \textbf{Specification} & \textbf{Measured} \\
+        \hline
+        Stays balanced throughout   & yes                  & yes (never fell) \\
+        Peak velocity               & $\geq 0.7\,\mathrm{m/s}$ & $\mathbf{1.01\,\mathrm{m/s}}$ \\
+        Peak $\text{vel}_{\mathrm{ref}}$ & $\leq 1.2\,\mathrm{m/s}$ cap & $1.15\,\mathrm{m/s}$ \\
+        Time to $\pm 5\,\mathrm{cm}$ of target & $< 12\,\mathrm{s}$ mission window & $9.07\,\mathrm{s}$ \\
+        Peak forward tilt           & ---                  & $+25.0^{\circ}$ (transient) \\
+        Peak motor voltage          & $< \pm 8\,\mathrm{V}$ & $4.75\,\mathrm{V}$ \\
+    \end{tabular}
+    \caption{Task 4 hardware test (Test~4) results versus assignment specification.}
+    \label{tab:task4_hw_results}
+\end{table}
 
 \subsection{Comments}
-\emph{Pending physical test.} The simulation meets the peak-velocity specification with no voltage saturation and a $59^{\circ}$ phase margin. Discrepancies with the physical robot are expected from unmodelled floor friction, gear backlash, and sensor noise; these are discussed after the measured data is available.
+The hardware run exceeds the linear-model prediction in peak velocity ($1.01$ vs.\ $0.80\,\mathrm{m/s}$). This is expected: the linear design assumes small-signal behaviour around zero tilt, whereas the physical robot exhibits up to $+25^{\circ}$ of commanded tilt during acceleration, which produces more forward thrust per unit $v_{\mathrm{ref}}$ than the linearised plant captures. The mission-window criterion is met with $\approx 3\,\mathrm{s}$ of margin, and the motor voltage stays at $\approx 59\,\%$ of the saturation budget.
+
+Two small deviations from the simulation deserve mention:
+
+\begin{itemize}
+    \item \textbf{Final position $10.7\,\mathrm{cm}$ short of the $2\,\mathrm{m}$ target.} The peak position reached $1.974\,\mathrm{m}$ (within $2.6\,\mathrm{cm}$), after which the robot drifted back and began a small-amplitude limit cycle (pitch $\pm 10^{\circ}$, $v_{\mathrm{ref}}$ saturated at $\pm 0.5\,\mathrm{m/s}$). The same pattern appears at the end of the Task~2 hold-in-place test (Figure~\ref{fig:task2_hw_3a}), which suggests a common cause: the measured $0.78^{\circ}$ mean tilt offset introduces a static bias the position loop integrates around, interacting with wheel static friction to produce a dead-zone limit cycle at zero commanded motion. A cleaner tilt-offset calibration would likely eliminate the phenomenon in both tests.
+    \item \textbf{Tilt peak of $+25^{\circ}$.} This exceeds the linear operating range around $0^{\circ}$, meaning the small-signal design is approximate in the aggressive-acceleration phase. The robot recovers cleanly, which implies the stability margins hold under the non-linearity --- the simulation predicts the same qualitative peak (Figure~\ref{fig:task4_step_sim}).
+\end{itemize}
+
+Overall the cascade of four controllers designed in Tasks~1--4 performs the full 2\,m position-step mission in simulation and on the physical robot, meeting every listed specification.

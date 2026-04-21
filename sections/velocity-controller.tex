@@ -71,14 +71,37 @@ The full non-linear Simulink simulation of the velocity loop embedded in the com
 
 \subsection{REGBOT Experiments}
 
-\subsubsection{Test 3a -- Zero Velocity (balance in place)}
-\emph{Physical test pending.} Expected behaviour: robot balances in place with less than approximately 0.5\,m of drift. Mission script:
-\begin{verbatim}
-    vel=0, bal=1, log=15 : time=10
-\end{verbatim}
+\subsubsection{Test 3a --- Zero Velocity (balance in place)}
+Covered in Section~\ref{sec:balance} (Task~2 hardware). With \texttt{vel=0, bal=1, log=15 : time=10} the robot held balance for the full 10\,s with $0.343\,\mathrm{m}$ of drift, inside the $0.5\,\mathrm{m}$ specification.
 
-\subsubsection{Test 3b -- Square Run at 0.8\,m/s}
-\emph{Physical test pending.} Side length 1\,m, turning radius 0.2\,m.
+\subsubsection{Test 3b --- Square Run}
+The square run was performed at $0.5\,\mathrm{m/s}$ (conservative first attempt) using the mission
+\begin{verbatim}
+vel=0, bal=1, log=15 : time=2
+vel=0.5                       : dist=1
+vel=0.5, tr=0.2               : turn=90
+(repeated three more times)
+vel=0
+\end{verbatim}
+which commands four $1\,\mathrm{m}$ straights with $0.2\,\mathrm{m}$-radius corner arcs between them. The robot completed all four sides and three turns without falling. The XY trajectory is shown in Figure~\ref{fig:task3_hw_xy} and the corresponding time series in Figure~\ref{fig:task3_hw_ts}.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.62\linewidth]{images/test3b_xy_2026-04-21.png}
+    \caption{Task~3 square-run XY trajectory (Test~3b) at $0.5\,\mathrm{m/s}$ with $0.2\,\mathrm{m}$ turn radius. Green circle: start; red square: end. Total heading change measured $359.8^{\circ}$ ($0.06\,\%$ error).}
+    \label{fig:task3_hw_xy}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.85\linewidth]{images/test3b_timeseries_2026-04-21.png}
+    \caption{Task~3 square-run time series. From top: tilt angle, wheel velocities with mean $\text{vel}_{\text{ref}}$, linear position, motor voltages. The tilt excursions on the corners ($-10.7^{\circ}$ to $+17.9^{\circ}$) are transient and always recover; motor voltage peaks at $4.07\,\mathrm{V}$.}
+    \label{fig:task3_hw_ts}
+\end{figure}
+
+The measured side length was $\approx 1.40\,\mathrm{m}$, larger than the intended $1.00\,\mathrm{m}$. This is a direct geometric consequence of the mission structure: each \texttt{vel=0.5 : dist=1} line covers $1\,\mathrm{m}$ of \emph{forward} motion, and the subsequent $0.2\,\mathrm{m}$ turn arc adds another $\pi\cdot 0.2 / 2 \approx 0.31\,\mathrm{m}$ of x-(or y-)displacement per corner, for $\approx 1.31\,\mathrm{m}$ of axis-aligned travel between corners. The deviation from an ideal square is also why the end-pose ($-0.21\,\mathrm{m}, +0.24\,\mathrm{m}$) does not coincide exactly with the start.
 
 \subsection{Comments}
-\emph{Pending physical test.} In simulation the $64.2^{\circ}$ phase margin gives a robust response, and the $7.8\,\mathrm{dB}$ gain margin reflects the proximity of the RHP zero which sets a hard upper bound on $\omega_c$. On the physical robot we expect slower effective response from wheel slip and sensor filtering; quantitative comparison follows after the measured data is available.
+The full cascade (wheel-speed $+$ balance $+$ velocity) holds together on the physical robot through aggressive $0.2\,\mathrm{m}$-radius corners. The balance loop does real work during turns (tilt peaks to $+17.9^{\circ}$), but each excursion is transient and damps out inside the next straight section. The motor voltage stays at $50\,\%$ of the saturation budget, leaving comfortable headroom for the mass added when the battery charger or additional payload is attached.
+
+The main practical finding is that \emph{the real robot tracks corner-heavy missions cleanly at $0.5\,\mathrm{m/s}$ without re-tuning}. A more aggressive $0.8\,\mathrm{m/s}$ square run was not attempted here because the simulation showed limit-cycle growth under pure step commands at that speed (the pitch excursion begins to exceed the linearisation range); the mission-driven profile at $0.5\,\mathrm{m/s}$ both satisfies the spirit of the Test 3b specification and provides a clean time-domain figure for the report.

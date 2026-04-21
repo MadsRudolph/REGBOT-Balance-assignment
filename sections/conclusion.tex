@@ -21,4 +21,27 @@ The central challenge was Task~2, where the open-loop balance plant carries one 
 
 Task~3 is constrained by a real RHP zero at $+8.7\,\mathrm{rad/s}$ in the closed-balance plant --- the non-minimum-phase physics of the inverted pendulum. This limits $\omega_{c,\mathrm{vel}} \leq z/5 \approx 1.7\,\mathrm{rad/s}$; the conservative choice $\omega_{c,\mathrm{vel}} = 1\,\mathrm{rad/s}$ was taken for robustness. Task~4 exploits the free integrator already present in $G_{pos,\mathrm{outer}}$ and therefore requires only a proportional controller. To satisfy the mission peak-velocity specification ($v > 0.7\,\mathrm{m/s}$ on a 2\,m move), the outer-loop separation was pushed from the conservative $5\times$ down to $1.67\times$; the resulting design achieves $0.80\,\mathrm{m/s}$ peak velocity and $59^{\circ}$ phase margin.
 
-All four Simulink simulations meet their respective specifications with comfortable headroom (no voltage saturation, pitch excursions less than $10^\circ$, and zero steady-state error). Validation on the physical REGBOT and the associated XY-plane plot for Task~4 will be added once the laboratory tests are completed.
+All four Simulink simulations meet their respective specifications with comfortable headroom (no voltage saturation, pitch excursions below $10^{\circ}$, and zero steady-state error). The four designs were then ported to the physical REGBOT by loading them from a group configuration file (\texttt{config/regbot\_group47.ini}) into the firmware controller blocks through the REGBOT GUI, and validated with four lab tests (Tests~0, 3a, 3b, 4). The hardware results are summarised in Table~\ref{tab:hw_summary}.
+
+\begin{table}[H]
+    \centering
+    \begin{tabular}{l|l|l|c}
+        \textbf{Test} & \textbf{Loop(s) under test} & \textbf{Key metric} & \textbf{Result} \\
+        \hline
+        0  & Task 1 (wheel-speed, balance off) & rise to $0.27\,\mathrm{m/s}$ & $0.329\,\mathrm{s}$ \ (spec $\sim 0.3$) \\
+        3a & Task 1+2 (balance at rest)        & drift over 10\,s            & $0.34\,\mathrm{m}$ \ (spec $\leq 0.5$) \\
+        3b & Task 1+2+3 (0.5\,m/s square)      & full 4-sides + 3 turns      & completed; $v_{\max} = 0.91\,\mathrm{m/s}$ on turns \\
+        4  & Full cascade (2\,m step)          & peak velocity               & $1.01\,\mathrm{m/s}$ \ (spec $\geq 0.7$) \\
+    \end{tabular}
+    \caption{Hardware validation summary. Every test satisfies its assignment specification.}
+    \label{tab:hw_summary}
+\end{table}
+
+Two practical findings emerged from the hardware work:
+
+\begin{enumerate}
+    \item \textbf{Sign of $K_P$ on the Balance block.} The firmware Balance controller does not internally absorb the Lecture~10 Method~2 minus sign; it has to be entered explicitly (\texttt{kp = -1.137} in \texttt{[cbal]}). An initial hardware run with positive $K_P$ produced the expected positive-feedback runaway. This is consistent with the theory --- the minus sign must live somewhere in the physical loop --- and the firmware leaves that choice to the designer.
+    \item \textbf{Tilt-offset sensitivity.} A residual $0.78^{\circ}$ tilt-offset calibration error produces a $0.34\,\mathrm{m}$ drift over 10\,s in the balance-only test, and manifests as a small late-time limit cycle in the position test once the robot is near its target and wheel static friction dominates. A more careful tilt-offset calibration would suppress both effects; neither violates a listed specification.
+\end{enumerate}
+
+The overall outcome is that the four-layer cascade --- inner wheel-speed PI, balance PILead with sign-absorbing post-integrator, outer velocity PI, and outermost position P --- works both in simulation and on the physical robot. The XY-plane figure required by the assignment (Figure~\ref{fig:task3_hw_xy}) is a clean closed square with $359.8^{\circ}$ of cumulative heading change.

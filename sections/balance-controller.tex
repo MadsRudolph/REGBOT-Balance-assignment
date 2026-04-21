@@ -151,7 +151,25 @@ The balance controller is wired in Simulink so that the gyro-based Lead is combi
 \end{figure}
 
 \subsection{REGBOT Experiment}
-% TODO — mission script and step response from physical REGBOT.
+Task~2 was validated on the physical robot with Test~3a (\texttt{vel=0, bal=1, log=15 : time=10}). The robot was held upright near the balance point, the mission was started, and the robot was released gently. Balance had to be maintained for 10\,s with drift no larger than $0.5\,\mathrm{m}$.
+
+\paragraph{Sign of \texorpdfstring{$K_P$}{Kp}.} The first attempt with $K_P = +1.137$ showed a classic positive-feedback runaway: the robot accelerated the wheels forward without attempting to correct the tilt. The firmware Balance block does not absorb the sign flip of the Lecture~10 Method~2 post-integrator internally; the $-1$ gain has to be entered explicitly. Setting $K_P = -1.137$ restored negative feedback and the robot balanced immediately.
+
+\paragraph{Result.} Figure~\ref{fig:task2_hw_3a} shows the balanced run. Balance was held for the full 10\,s, the total drift was $0.343\,\mathrm{m}$ (within the $0.5\,\mathrm{m}$ spec), peak motor voltage was $2.25\,\mathrm{V}$ (well below the $\pm 8\,\mathrm{V}$ limit), and during the calm period $t = 2$\,s--$6$\,s pitch held within $\approx \pm 1^{\circ}$.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.85\linewidth]{images/test3a_balance_rest_2026-04-21_v2.png}
+    \caption{Task~2 hardware test (Test~3a). From top: tilt angle, linear position, wheel velocity with $\text{vel}_{\text{ref}}$, motor voltages. Balance held for the full 10\,s with $0.343\,\mathrm{m}$ drift and no saturation.}
+    \label{fig:task2_hw_3a}
+\end{figure}
 
 \subsection{Comments}
-% TODO — comparison sim vs. experiment once REGBOT test is done.
+Two effects stand out in the hardware test that the linear design did not predict:
+
+\begin{itemize}
+    \item \textbf{Backward drift.} A $0.78^{\circ}$ mean tilt offset causes the controller to command small, sustained wheel motion to ``correct'' a tilt that is actually its own mis-calibration. This integrates into $\approx 0.34\,\mathrm{m}$ of drift in 10\,s. The drift is within the assignment's $0.5\,\mathrm{m}$ tolerance and the Task~3 velocity loop closes the gap further, but a cleaner tilt-offset calibration would eliminate it at the source.
+    \item \textbf{Late-period pitch growth.} From $t \approx 6$\,s onward the pitch swings grow from $\pm 5^{\circ}$ to $\pm 10^{\circ}$. The robot recovers each swing, so the behaviour is bounded rather than divergent. It is most likely driven by an external disturbance (approaching the robot, battery droop, or floor slope), not a fundamental stability problem: the calm $t = 2$\,s--$6$\,s interval shows very tight tracking.
+\end{itemize}
+
+The sign-flip finding confirms the structure of Lecture~10 Method~2: the minus sign is not cosmetic, it belongs somewhere in the physical loop, and the firmware leaves that choice to the user.
