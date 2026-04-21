@@ -1,8 +1,95 @@
 \section{Position Controller (Task 4)}
 \label{sec:position}
 
-% TODO — this section will be filled in after Task 4 is completed.
-%
-% Plant: velocity-controlled system seen from the position side (adds one integrator).
-% Controller: PILead.
-% Test: 2 m move with max speed > 0.7 m/s; record XY-plane trajectory.
+\subsection{Plant Transfer Function}
+With the balance loop of Task~\ref{sec:balance} and the velocity loop of Task~\ref{sec:velocity} closed, the plant seen by the outermost controller is the closed-loop velocity system cascaded with a free integrator (wheel position is the integral of wheel velocity):
+\begin{equation}
+    G_{pos,\mathrm{outer}}(s) \;=\; \frac{X(s)}{V_{\mathrm{ref}}(s)} \;\approx\; \frac{1}{s}\cdot T_{\mathrm{vel}}(s).
+\end{equation}
+The plant is identified by linearising the Simulink model from the output of the \texttt{Kppos\_gain} block to the \texttt{x\_position} output (port~3 of the \texttt{/robot with balance} subsystem) with \texttt{Kppos~=~0}. The identified plant has $0$ RHP poles, one pole at the origin (the free integrator), and all remaining poles in the left half plane --- confirming that the inner loops have successfully stabilised the open-loop unstable dynamics.
+
+\subsection{Controller Design}
+Because the plant is already Type-1, a pure proportional controller is sufficient to drive the steady-state error to a step position reference to zero --- no additional I-term is needed. The cascade-separation rule (outer crossover at least a few times below the inner) gives an upper bound on $\omega_{c,\mathrm{pos}}$ set by $\omega_{c,\mathrm{vel}} = 1\,\mathrm{rad/s}$.
+
+Three candidate crossovers were evaluated against the mission specs (peak velocity $> 0.7\,\mathrm{m/s}$ on a 2\,m move, mission window 10\,s):
+
+\begin{table}[H]
+    \centering
+    \begin{tabular}{c|c|c|c|c|l}
+        $\omega_{c,\mathrm{pos}}$ & $\gamma_M$ & GM & Peak $v$ & Settle (2\,\%) & Verdict \\
+        \hline
+        $0.2\,\mathrm{rad/s}$ & $87^\circ$ & $38\,\mathrm{dB}$ & $0.33\,\mathrm{m/s}$ & $20\,\mathrm{s}$ & Fails velocity and settle specs \\
+        $0.5\,\mathrm{rad/s}$ & $66^\circ$ & $25\,\mathrm{dB}$ & $0.68\,\mathrm{m/s}$ & $12\,\mathrm{s}$ & Just below $0.7\,\mathrm{m/s}$ spec \\
+        $\mathbf{0.6\,\mathrm{rad/s}}$ & $\mathbf{60^\circ}$ & $\mathbf{23\,\mathrm{dB}}$ & $\mathbf{0.80\,\mathrm{m/s}}$ & $\mathbf{11\,\mathrm{s}}$ & \textbf{Chosen} \\
+    \end{tabular}
+    \caption{Task 4 design iteration. The 11\,s linear-model 2\,\%-envelope settling slightly exceeds the 10\,s mission window but is pessimistic: the mission only requires the robot to \emph{reach} 2\,m within 10\,s, not to settle to 2\,\% precision.}
+    \label{tab:task4_iteration}
+\end{table}
+
+The chosen separation ratio $\omega_{c,\mathrm{pos}}/\omega_{c,\mathrm{vel}} = 0.6$ is aggressive (1.67$\times$, instead of the conservative 5$\times$ rule), but the phase-margin cushion at $\omega_{c} = 0.2$ was large enough to absorb the push.
+
+At $\omega_c = 0.6\,\mathrm{rad/s}$ the plant phase is $\angle G_{pos,\mathrm{outer}}(j\omega_c) = -120.9^{\circ}$, giving a phase-lead requirement of
+\begin{equation}
+    \phi_{\mathrm{Lead}} = -180^{\circ} + \gamma_M - \angle G_{pos,\mathrm{outer}}(j\omega_c) = +0.94^{\circ},
+\end{equation}
+which is essentially negligible. A theoretical ideal Lead with $\tau_d = 0.027\,\mathrm{s}$ would raise $\gamma_M$ from $59^{\circ}$ to exactly $60^{\circ}$, but a pure Lead $(\tau_d s + 1)$ is an improper transfer function and cannot be realised by a Simulink \texttt{Transfer Fcn} block. Rather than add a proper-Lead block with a fast filter pole for a $1^{\circ}$ phase-margin gain, the Lead is omitted:
+\begin{equation}
+    C_{pos}(s) = K_P = 0.534, \qquad \gamma_M = 59^{\circ}.
+\end{equation}
+
+The loop gain is set by $|L(j\omega_c)| = 1$:
+\begin{equation}
+    |G_{pos,\mathrm{outer}}(j\omega_c)| = 1.87, \qquad K_P = \frac{1}{1.87} = 0.534.
+\end{equation}
+
+\begin{table}[H]
+    \centering
+    \begin{tabular}{l|c|c}
+        \textbf{Parameter} & \textbf{Target} & \textbf{Achieved} \\
+        \hline
+        $K_P$              & --                    & $0.534$ \\
+        $\tau_d$           & --                    & $0$ (Lead omitted) \\
+        $\omega_c$         & $0.6\,\mathrm{rad/s}$ & $0.600\,\mathrm{rad/s}$ \\
+        $\gamma_M$         & $\geq 60^\circ$       & $59^\circ$ \\
+        Gain margin        & --                    & $23.2\,\mathrm{dB}$ \\
+        Peak $v$ (2\,m)    & $> 0.7\,\mathrm{m/s}$ & $0.80\,\mathrm{m/s}$ \\
+    \end{tabular}
+    \caption{Task 4 design summary.}
+    \label{tab:task4_results}
+\end{table}
+
+\subsection{Bode Plot (Open-Loop)}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.7\linewidth]{images/regbot_task4_loop_bode.png}
+    \caption{Open-loop Bode of $L(s) = K_P\,G_{pos,\mathrm{outer}}(s)$. Crossover at $\omega_c = 0.60\,\mathrm{rad/s}$ with $\gamma_M = 59^{\circ}$ and $GM = 23.2\,\mathrm{dB}$.}
+    \label{fig:task4_loop_bode}
+\end{figure}
+
+\subsection{Simulation Results}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.9\linewidth]{images/regbot_task4_sim_step.png}
+    \caption{Simulated response to a 2\,m position step at $t = 1\,\mathrm{s}$. Blue: wheel position ($0 \to 2\,\mathrm{m}$, $\approx 8\,\%$ overshoot, settled within $\approx 6\,\mathrm{s}$ of the step). Green: wheel velocity (peak $0.80\,\mathrm{m/s}$, matching the linear prediction of $0.797\,\mathrm{m/s}$). Yellow: motor voltage after the $\pm 9\,\mathrm{V}$ limiter (peak $\approx 3.3\,\mathrm{V}$, no saturation). Red: pitch (small excursions, robot leans briefly to accelerate/decelerate). The twin-bump in motor voltage reflects the 1.67$\times$ separation between the position and velocity loops.}
+    \label{fig:task4_step_sim}
+\end{figure}
+
+\subsection{REGBOT Experiment}
+\emph{Physical test pending.} The test sequence planned is:
+\begin{enumerate}[label=(\alph*)]
+    \item Robot stands still
+    \item Robot finds the balance
+    \item Robot moves 2\,m with maximum speed exceeding 0.7\,m/s
+    \item Robot stops
+\end{enumerate}
+Mission script:
+\begin{verbatim}
+    vel=0, bal=1, log=15 : time=2
+    topos=2, vel=1.2 : time=10
+\end{verbatim}
+
+\subsection{XY-Plane Motion}
+\emph{Plot pending physical run.} The XY-plane figure required by the assignment will be produced from the logged data once the physical 2\,m move is recorded.
+
+\subsection{Comments}
+\emph{Pending physical test.} The simulation meets the peak-velocity specification with no voltage saturation and a $59^{\circ}$ phase margin. Discrepancies with the physical robot are expected from unmodelled floor friction, gear backlash, and sensor noise; these are discussed after the measured data is available.

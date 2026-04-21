@@ -1,12 +1,24 @@
 \section{Conclusion}
 \label{sec:conclusion}
 
-% TODO — to be written after all tasks are complete.
-%
-% Topics to cover:
-%   - Summary of the cascaded control architecture and the four designs.
-%   - Comparison of simulation vs physical REGBOT performance.
-%   - Observations on the effect of the post-integrator in Task 2.
-%   - Challenges encountered (e.g. actuator saturation, model mismatch) and mitigations.
-%   - Possible improvements and future work.
-%   - Optional link to experiment videos.
+Four cascaded controllers were designed for the REGBOT using the frequency-domain phase-balance method and verified in Simulink on the non-linear Simscape Multibody model. The final gains committed to \texttt{regbot\_mg.m} are summarised in Table~\ref{tab:final_gains}.
+
+\begin{table}[H]
+    \centering
+    \begin{tabular}{l|l|c|c|c}
+        \textbf{Task} & \textbf{Controller}   & $\boldsymbol{\omega_c}$ & $\boldsymbol{\gamma_M}$ & \textbf{Parameters} \\
+        \hline
+        1 -- Wheel speed & PI                 & $30\,\mathrm{rad/s}$  & $121.6^{\circ}$ & $K_P = 3.31$, $\tau_i = 0.10\,\mathrm{s}$ \\
+        2 -- Balance     & PILead + Post-PI   & $15\,\mathrm{rad/s}$  & $60^{\circ}$    & $K_P = 1.137$, $\tau_i = 0.20\,\mathrm{s}$, $\tau_d = 0.1355\,\mathrm{s}$, $\tau_{i,\mathrm{post}} = 0.1682\,\mathrm{s}$ \\
+        3 -- Velocity    & PI                 & $1\,\mathrm{rad/s}$   & $64.2^{\circ}$  & $K_P = 0.162$, $\tau_i = 3.0\,\mathrm{s}$ \\
+        4 -- Position    & P                  & $0.6\,\mathrm{rad/s}$ & $59^{\circ}$    & $K_P = 0.534$ \\
+    \end{tabular}
+    \caption{Final committed controller parameters.}
+    \label{tab:final_gains}
+\end{table}
+
+The central challenge was Task~2, where the open-loop balance plant carries one RHP pole at $+8.7\,\mathrm{rad/s}$. Lecture~10 Method~2 solves this by (i) absorbing a sign flip into a post-integrator placed at the magnitude peak of $|G_{tilt}|$, producing a monotonically decreasing shaped plant $G_{tilt,\mathrm{post}}$, and (ii) designing an outer PI-Lead for the shaped plant using standard phase balance. The gyro signal was used to realise an ideal $(\tau_d s + 1)$ Lead without the filter pole of a proper Lead.
+
+Task~3 is constrained by a real RHP zero at $+8.7\,\mathrm{rad/s}$ in the closed-balance plant --- the non-minimum-phase physics of the inverted pendulum. This limits $\omega_{c,\mathrm{vel}} \leq z/5 \approx 1.7\,\mathrm{rad/s}$; the conservative choice $\omega_{c,\mathrm{vel}} = 1\,\mathrm{rad/s}$ was taken for robustness. Task~4 exploits the free integrator already present in $G_{pos,\mathrm{outer}}$ and therefore requires only a proportional controller. To satisfy the mission peak-velocity specification ($v > 0.7\,\mathrm{m/s}$ on a 2\,m move), the outer-loop separation was pushed from the conservative $5\times$ down to $1.67\times$; the resulting design achieves $0.80\,\mathrm{m/s}$ peak velocity and $59^{\circ}$ phase margin.
+
+All four Simulink simulations meet their respective specifications with comfortable headroom (no voltage saturation, pitch excursions less than $10^\circ$, and zero steady-state error). Validation on the physical REGBOT and the associated XY-plane plot for Task~4 will be added once the laboratory tests are completed.

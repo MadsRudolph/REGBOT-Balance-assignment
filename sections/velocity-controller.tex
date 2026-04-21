@@ -1,9 +1,84 @@
 \section{Velocity Controller (Task 3)}
 \label{sec:velocity}
 
-% TODO — this section will be filled in after Task 3 is completed.
-%
-% Plant: closed balance loop seen from the velocity side.
-% Controller: PILead.
-% Test 3a: zero velocity balance (drift within 0.5 m).
-% Test 3b: square run at 0.8 m/s, side length 1 m, turning radius 0.2 m.
+\subsection{Plant Transfer Function}
+With the balance loop of Task~\ref{sec:balance} closed, the outer plant is identified by linearising the Simulink model from the output of the \texttt{Kpvel\_gain} block (which produces the tilt reference $\theta_{\mathrm{ref}}$) to the wheel-velocity filter output \texttt{/wheel\_vel\_filter}. This gives $G_{vel,\mathrm{outer}}(s) = \theta_{\mathrm{ref}} \to v$. The identified plant has zero RHP poles (the closed balance loop has stabilised the pendulum mode) but a real RHP zero at approximately $+8.67\,\mathrm{rad/s}$, which reflects the non-minimum-phase physics of balancing: the wheels must first roll backward for the body to tilt forward.
+
+The RHP zero fundamentally bounds the crossover of the velocity loop through the rule of thumb $\omega_c \leq z/5$, i.e.\ $\omega_c \lesssim 1.73\,\mathrm{rad/s}$.
+
+\subsection{Controller Design}
+A pure PI controller is used. The outer loop is made substantially slower than the inner balance loop so the closed balance dynamics appear as a high-bandwidth unity gain at $\omega_{c,\mathrm{vel}}$. The design specifications are listed in Table~\ref{tab:task3_specs}.
+
+\begin{table}[H]
+    \centering
+    \begin{tabular}{l|c|l}
+        \textbf{Parameter} & \textbf{Value} & \textbf{Reason} \\
+        \hline
+        $\omega_c$ & $1\,\mathrm{rad/s}$ & Safely below the RHP zero at $+8.67\,\mathrm{rad/s}$ (rule $\omega_c \leq z/5$) \\
+        $\gamma_M$ & $\geq 60^\circ$      & Robust phase margin (specification) \\
+        $N_i$      & $3$                 & PI zero placed at $\omega_c/N_i$ below crossover \\
+    \end{tabular}
+    \caption{Task 3 design specifications.}
+    \label{tab:task3_specs}
+\end{table}
+
+The PI zero is placed at $\tau_i = N_i/\omega_c = 3\,\mathrm{s}$. At $\omega_c = 1\,\mathrm{rad/s}$ the plant phase is $\angle G_{vel,\mathrm{outer}}(j\omega_c) = -101.8^\circ$ and the PI contributes $-\arctan(1/N_i) = -18.4^\circ$, giving
+\begin{equation}
+    \phi_{\mathrm{Lead}} = -180^{\circ} + \gamma_M - \angle G_{vel,\mathrm{outer}}(j\omega_c) - \angle C_{PI}(j\omega_c) = -0.2^{\circ},
+\end{equation}
+so no Lead is required --- the $60^\circ$ phase-margin spec is met by the PI alone. The proportional gain is obtained from $|L(j\omega_c)| = 1$:
+\begin{equation}
+    K_P = \frac{1}{|C_{PI}(j\omega_c)\,G_{vel,\mathrm{outer}}(j\omega_c)|} = 0.162.
+\end{equation}
+The velocity controller is
+\begin{equation}
+    C_{vel}(s) = K_P\cdot\frac{\tau_i s + 1}{\tau_i s} = 0.162\cdot\frac{3s + 1}{3s}.
+    \label{eq:cvel}
+\end{equation}
+
+\begin{table}[H]
+    \centering
+    \begin{tabular}{l|c|c}
+        \textbf{Parameter} & \textbf{Target} & \textbf{Achieved} \\
+        \hline
+        $K_P$              & --                    & $0.1616$ \\
+        $\tau_i$           & --                    & $3.000\,\mathrm{s}$ \\
+        $\omega_c$         & $1\,\mathrm{rad/s}$   & $1.00\,\mathrm{rad/s}$ \\
+        $\gamma_M$         & $\geq 60^\circ$       & $64.2^\circ$ \\
+        Gain margin        & --                    & $7.84\,\mathrm{dB}$ \\
+    \end{tabular}
+    \caption{Task 3 design summary.}
+    \label{tab:task3_results}
+\end{table}
+
+\subsection{Bode Plot (Open-Loop)}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.7\linewidth]{images/regbot_task3_loop_bode.png}
+    \caption{Open-loop Bode of $L(s) = K_P\,C_{PI}(s)\,G_{vel,\mathrm{outer}}(s)$. Crossover at $\omega_c = 1.00\,\mathrm{rad/s}$ with $\gamma_M = 64.2^{\circ}$.}
+    \label{fig:task3_loop_bode}
+\end{figure}
+
+\subsection{Simulation Results}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.75\linewidth]{images/regbot_task3_step.png}
+    \caption{Linear closed-loop step response of the Task~3 velocity controller. Zero steady-state error with a rise time consistent with $\omega_c = 1\,\mathrm{rad/s}$.}
+    \label{fig:task3_step_sim}
+\end{figure}
+
+The full non-linear Simulink simulation of the velocity loop embedded in the complete cascade is covered in Task~\ref{sec:position} (Figure~\ref{fig:task4_step_sim}), where the green trace shows wheel velocity responding to the position-loop-generated velocity command.
+
+\subsection{REGBOT Experiments}
+
+\subsubsection{Test 3a -- Zero Velocity (balance in place)}
+\emph{Physical test pending.} Expected behaviour: robot balances in place with less than approximately 0.5\,m of drift. Mission script:
+\begin{verbatim}
+    vel=0, bal=1, log=15 : time=10
+\end{verbatim}
+
+\subsubsection{Test 3b -- Square Run at 0.8\,m/s}
+\emph{Physical test pending.} Side length 1\,m, turning radius 0.2\,m.
+
+\subsection{Comments}
+\emph{Pending physical test.} In simulation the $64.2^{\circ}$ phase margin gives a robust response, and the $7.8\,\mathrm{dB}$ gain margin reflects the proximity of the RHP zero which sets a hard upper bound on $\omega_c$. On the physical robot we expect slower effective response from wheel slip and sensor filtering; quantitative comparison follows after the measured data is available.

@@ -130,13 +130,24 @@ From \texttt{margin(L\_tilt)}: achieved $\omega_c = 15.0\,\mathrm{rad/s}$, $\gam
 \end{figure}
 
 \subsection{Simulation Results}
-The balance controller is wired in Simulink so that the gyro-based Lead is combined with pitch \emph{before} the error sum (multiplicative Lead in series). Tested with $\theta_0 = 10^{\circ}$ initial tilt and no external push, the full non-linear model recovers within about one second, and the motor voltage stays well inside the $\pm 9\,\mathrm{V}$ saturation limit.
+The balance controller is wired in Simulink so that the gyro-based Lead is combined with pitch \emph{before} the error sum (multiplicative Lead in series). Two simulation tests validate the design:
+
+\paragraph{Initial-condition recovery.} With $\theta_0 = 10^{\circ}$ initial tilt and no external push, the full non-linear model recovers within about one second, and the motor voltage stays well inside the $\pm 9\,\mathrm{V}$ saturation limit (Figure~\ref{fig:task2_sim_recovery}).
 
 \begin{figure}[H]
     \centering
     \includegraphics[width=0.8\linewidth]{images/regbot_task2_sim_recovery_10deg.png}
     \caption{Simulink recovery from $\theta_0 = 10^{\circ}$. Yellow: pitch in radians ($0.175\,\mathrm{rad} \to 0$). Blue: motor voltage in volts (peak $\approx 1.3\,\mathrm{V}$, well below the $\pm 9\,\mathrm{V}$ limit).}
     \label{fig:task2_sim_recovery}
+\end{figure}
+
+\paragraph{Push-disturbance rejection.} A 1\,N, 0.1\,s push applied at the top of the robot at $t = 1$\,s is rejected within $\approx 2$\,s with two decaying cycles, no voltage saturation, and a small residual position offset (Figure~\ref{fig:task2_sim_push}). The residual $x$-offset is expected: Task~2 closes only the balance and velocity loops; the position loop is added in Task~4.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.85\linewidth]{images/regbot_task2_sim_push.png}
+    \caption{Regulation response to a 1\,N / 0.1\,s push at $t = 1$\,s. Yellow: motor voltage. Blue: wheel position. Red: pitch. Tilt recovers within $\approx 2$\,s, motor voltage peaks at $\approx 1.15\,\mathrm{V}$, wheel position settles at a small residual offset.}
+    \label{fig:task2_sim_push}
 \end{figure}
 
 \subsection{REGBOT Experiment}
