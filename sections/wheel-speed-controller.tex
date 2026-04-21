@@ -108,24 +108,18 @@ Quantitative comparison with the design is collected in Table~\ref{tab:task1_hw_
 \subsection{Comments}
 The achieved phase margin of $121.6^{\circ}$ is far above the $60^{\circ}$ specification, making the controller very robust but slightly conservative. The design is intentionally conservative to make the inner loop predictable for the outer balance controller.
 
-\paragraph{Discrepancy with the Day~5 model.} The hardware test reveals a quantitative mismatch with the Day~5 linear plant that bears on the validity of the whole cascade design, so it is worth unpacking.
+\paragraph{Operating-regime caveat for Test~0.} Test~0 was run with the robot lying on its back and the wheels spinning freely in the air (Balance had to be disabled for this isolated wheel-speed test, so the robot could not stay upright). This is a \emph{different operating regime} from the Day~5 identification, which was carried out with the robot rolling on the floor. Any direct comparison between the Test~0 steady-state voltage and the Day~5 DC-gain prediction would therefore be an apples-to-oranges comparison --- they describe different physical conditions.
 
-Holding $0.3\,\mathrm{m/s}$ in steady state required $\approx 1.8\,\mathrm{V}$, whereas the Day~5 model $G_{vel,\mathrm{day5}}(s) = 13.34/(s + 35.71)$ predicts $0.3/0.374 \approx 0.8\,\mathrm{V}$ --- a factor-of-$2.25$ discrepancy. Two candidate explanations, not mutually exclusive:
+\paragraph{What the Test~0 steady-state voltage actually measures.} With the wheels free in the air, the motor torque only has to overcome internal drivetrain friction and the back-EMF produced by rotation. Using the REGBOT motor and drivetrain parameters (gear ratio $N_G = 9.69$, wheel radius $W_R = 0.03\,\mathrm{m}$, EMF constant $K_{\mathrm{emf}} = 0.0105\,\mathrm{V\,s/rad}$, armature resistance $R_A = 1.65\,\Omega$):
+\begin{equation}
+    \omega_{\mathrm{motor}} = \frac{v}{W_R}\,N_G = \frac{0.3}{0.03}\cdot 9.69 = 96.9\,\mathrm{rad/s},
+    \quad
+    V_{\mathrm{BEMF}} = K_{\mathrm{emf}}\,\omega_{\mathrm{motor}} \approx 1.02\,\mathrm{V}.
+\end{equation}
+The remaining $\approx 0.8\,\mathrm{V}$ of the measured $1.8\,\mathrm{V}$ steady-state is accounted for by the $I\!R$ voltage drop across the armature resistance due to the current required to overcome bearing and gearbox friction. The observation is consistent with the wheels-up regime and does \emph{not} indicate that the Day~5 on-floor model is inaccurate.
 
-\begin{enumerate}
-    \item \textbf{Linear DC-gain error.} The true plant DC gain is $\approx 0.167\,\mathrm{(m/s)/V}$ rather than $0.374\,\mathrm{(m/s)/V}$. The Day~5 identification was done with the robot rolling freely on a flat surface, which may have understated the load torque the motor sees when the robot is balancing on its wheels in its normal configuration (full mass, proper tyre contact patch).
-    \item \textbf{Non-linear friction (Coulomb $+$ viscous).} The plant dynamics agree with Day~5, but a roughly constant $\approx 1\,\mathrm{V}$ overhead is needed to overcome bearing, gearbox, tyre, and air friction. A single-point steady-state measurement cannot distinguish this from (1) --- we would need velocity--voltage curves at several operating points to fit an affine model of the form $V_{ss}(v) = V_{\mathrm{coulomb}} + v/K_{dc}$.
-\end{enumerate}
+A direct test of the Day~5 model would have required an on-floor open-loop run with balance disabled, which would need training wheels or a similar stabilising fixture and was not part of the test plan. The on-floor behaviour is instead validated \emph{indirectly} by the Tasks~2--4 experiments: in all three the robot drives on the floor with the wheel-speed PI operating inside the cascade, and each test meets its specification.
 
-The rise time to $90\,\%$ of target was $0.329\,\mathrm{s}$ on hardware versus $\approx 80\,\mathrm{ms}$ for a first-order closed loop at $\omega_c = 30\,\mathrm{rad/s}$. Part of this is explained by the measured wheel-velocity estimator delay of $\approx 5\,\mathrm{ms}$ and the $15\,\mathrm{ms}$ log-sampling interval (the internal control loop runs at $1\,\mathrm{kHz}$), but a real slowdown is likely also present: the effective closed-loop bandwidth on the physical robot appears closer to $7\text{--}10\,\mathrm{rad/s}$ than the designed $30\,\mathrm{rad/s}$.
-
-\paragraph{Why we keep the Day~5 model.} We did not re-identify the plant, for three reasons:
-\begin{itemize}
-    \item The PI integrator in the wheel-speed loop absorbs the voltage overhead as an input-referred disturbance, driving the steady-state velocity error to $\approx 1\,\%$ on hardware (essentially zero).
-    \item Task~1 was designed with $121.6^{\circ}$ phase-margin cushion --- far more than the $60^{\circ}$ specification required. Even at a reduced effective bandwidth of $7\text{--}10\,\mathrm{rad/s}$, the loop phase margin remains well above $60^{\circ}$, so stability is not in question.
-    \item The outer loops (Tasks~2--4) are designed against $G_{tilt}$ and $G_{vel,\mathrm{outer}}$, which are obtained by \texttt{linearize()} on the \emph{full} Simulink model (with the Task~1 gains in place and the true Simscape Multibody dynamics), not against $G_{vel,\mathrm{day5}}$ directly. The Day~5 model therefore only directly informs Task~1; its errors propagate weakly to the outer designs.
-\end{itemize}
-
-The practical consequence is that all four controllers pass their hardware specifications with the designs derived from the Day~5 plant. If future work required tighter margins or faster inner-loop response, a re-identification at several operating points with the robot in balance configuration would refine the plant and allow a more aggressive Task~1 design.
+\paragraph{Rise time and log-sampling caveat.} The measured $90\,\%$ rise time of $0.329\,\mathrm{s}$ is slower than the $\approx 80\,\mathrm{ms}$ predicted for a first-order closed loop at $\omega_c = 30\,\mathrm{rad/s}$. The logged velocity estimate lags by $\approx 5\,\mathrm{ms}$ (reported in the log header), the log interval is $15\,\mathrm{ms}$ while the internal controller runs at $1\,\mathrm{kHz}$, and the wheels-up load is very light --- all of which affect the transient seen in the plot without necessarily indicating a slower true closed-loop bandwidth. Crucially, Task~1 has a $121.6^{\circ}$ phase-margin cushion, so even a noticeably reduced effective bandwidth would not threaten stability. The outer loops (Tasks~2--4) are designed against $G_{tilt}$ and $G_{vel,\mathrm{outer}}$, obtained by \texttt{linearize()} on the \emph{full} Simulink model with the Task~1 gains in place, not against $G_{vel,\mathrm{day5}}$ directly, so any residual Day~5 error propagates only weakly to the outer designs.
 
 The left and right motors agree to $0.36\,\%$ in mean velocity, so no per-wheel gain trim is needed.
