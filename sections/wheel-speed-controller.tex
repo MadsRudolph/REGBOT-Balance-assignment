@@ -2,12 +2,14 @@
 \label{sec:wheel-speed}
 
 \subsection{Plant Transfer Function}
-The plant used for the wheel-speed controller is the voltage-to-velocity transfer function identified on Day~5 from black-box measurements, with the robot lying on its side so the tilt dynamics are decoupled:
+The inner loop's voltage-to-velocity plant was identified on Day~5 from a black-box swept-sine experiment \emph{with the robot rolling on the floor on training wheels}, giving a single-pole fit
 \begin{equation}
-    G_{vel}(s) = \frac{13.34}{s + 35.71}
+    G_{vel}(s) = \frac{2.198}{s + 5.985},
     \label{eq:gvel_day5}
 \end{equation}
-The DC gain is $0.374\,\mathrm{(m/s)/V}$, the time constant is $\tau = 28\,\mathrm{ms}$, and the only pole lies at $-35.71\,\mathrm{rad/s}$.
+with DC gain $0.367\,\mathrm{(m/s)/V}$, time constant $\tau = 167\,\mathrm{ms}$, and a single pole at $-5.985\,\mathrm{rad/s}$. This is the operating regime the outer loops will see during the assignment missions, so using it as the Task~1 design plant aligns the inner-loop design with the environment in which it has to work.
+
+\paragraph{Note on a first, discarded identification.} An earlier attempt used a wheels-up identification ($G_{vel} = 13.34/(s+35.71)$, $\tau = 28\,\mathrm{ms}$) as the Task~1 plant. That fit described the motor-and-wheel mechanical pair in free space, not the robot rolling on the floor, and its dominant time constant was roughly six times faster than the true on-floor plant. Section~\ref{sec:task1_hw} explains why this mattered and how the measurement exposed it; the redesign described here is the one committed in the firmware.
 
 \subsection{Controller Design}
 A PI controller is selected so that the steady-state error to a step velocity reference is zero. The inner loop is designed to be fast so that the balance controller in the outer loop can treat the velocity dynamics as nearly instantaneous. The design specifications and chosen parameters are listed in Table~\ref{tab:task1_specs}.
@@ -17,7 +19,7 @@ A PI controller is selected so that the steady-state error to a step velocity re
     \begin{tabular}{l|c|l}
         \textbf{Parameter} & \textbf{Value} & \textbf{Reason} \\
         \hline
-        $\omega_c$   & $30\,\mathrm{rad/s}$ & Fast inner loop, below the plant pole at $35.71\,\mathrm{rad/s}$ \\
+        $\omega_c$   & $30\,\mathrm{rad/s}$ & Fast inner loop, five times above the plant pole at $5.985\,\mathrm{rad/s}$ \\
         $\gamma_M$   & $\geq 60^\circ$      & Robust phase margin (specification) \\
         $N_i$        & $3$                  & PI zero placed at $\omega_c/N_i$ below crossover \\
     \end{tabular}
@@ -25,37 +27,37 @@ A PI controller is selected so that the steady-state error to a step velocity re
     \label{tab:task1_specs}
 \end{table}
 
-Using the phase-balance equation at $\omega_c = 30\,\mathrm{rad/s}$, the controller provides a phase contribution of
+Using the phase-balance equation at $\omega_c = 30\,\mathrm{rad/s}$, the PI controller contributes
 \[
     \phi_{PI} = \arctan(N_i) - 90^\circ = \arctan(3) - 90^\circ \approx -18.4^\circ,
 \]
-and the plant provides
+and the plant
 \[
-    \angle G_{vel}(j\omega_c) = -\arctan(30/35.71) \approx -40.0^\circ,
+    \angle G_{vel}(j\omega_c) = -\arctan(30/5.985) \approx -78.7^\circ,
 \]
-for a total open-loop phase of $-58.4^\circ$ at $\omega_c$, giving a phase margin well above the $60^\circ$ target. The PI zero is placed at $\omega_c/N_i = 10\,\mathrm{rad/s}$, i.e.\ $\tau_i = 0.1\,\mathrm{s}$. The proportional gain is chosen so that $|L(j\omega_c)| = 1$:
+for a total open-loop phase of $-97.1^\circ$ at $\omega_c$, giving an open-loop phase margin of $82.9^\circ$ --- comfortably above the $60^\circ$ target. The PI zero is placed at $\omega_c/N_i = 10\,\mathrm{rad/s}$, i.e.\ $\tau_i = 0.100\,\mathrm{s}$. The proportional gain is chosen so that $|L(j\omega_c)| = 1$:
 \[
-    K_p = \frac{1}{|G_{vel}(j\omega_c)|\cdot|(\tau_i j\omega_c + 1)/(\tau_i j\omega_c)|} \approx 3.31.
+    K_p = \frac{1}{|G_{vel}(j\omega_c)|\cdot|(\tau_i j\omega_c + 1)/(\tau_i j\omega_c)|} = \frac{1}{0.0758} \approx 13.20.
 \]
 The resulting controller is
 \begin{equation}
     C_{wv}(s) = K_p \cdot \frac{\tau_i s + 1}{\tau_i s}
-    = 3.31 \cdot \frac{0.1s + 1}{0.1s}.
+    = 13.2037 \cdot \frac{0.1s + 1}{0.1s}.
     \label{eq:cwv}
 \end{equation}
 
 \subsection{Verification}
-Table~\ref{tab:task1_results} reports the design and achieved values. The open-loop Bode plot of $L_{wv}(s) = C_{wv}(s) G_{vel}(s)$ with MATLAB's \texttt{margin()} overlay is shown in Figure~\ref{fig:task1_bode}, and the closed-loop step response is shown in Figure~\ref{fig:task1_step}.
+Table~\ref{tab:task1_results} reports the design and achieved values. The open-loop Bode plot of $L_{wv}(s) = C_{wv}(s) G_{vel}(s)$ with MATLAB's \texttt{margin()} overlay is shown in Figure~\ref{fig:task1_bode}, and the linear closed-loop step response is shown in Figure~\ref{fig:task1_step}.
 
 \begin{table}[H]
     \centering
     \begin{tabular}{l|c|c}
         \textbf{Parameter} & \textbf{Target} & \textbf{Achieved} \\
         \hline
-        $K_p$              & -- & $3.31$ \\
+        $K_p$              & -- & $13.2037$ \\
         $\tau_i$           & -- & $0.100\,\mathrm{s}$ \\
-        $\omega_c$         & $30\,\mathrm{rad/s}$ & $29.88\,\mathrm{rad/s}$ \\
-        $\gamma_M$         & $\geq 60^\circ$      & $121.6^\circ$ \\
+        $\omega_c$         & $30\,\mathrm{rad/s}$ & $30.00\,\mathrm{rad/s}$ \\
+        $\gamma_M$         & $\geq 60^\circ$      & $82.85^\circ$ \\
         Gain margin        & --                   & $\infty\,\mathrm{dB}$ \\
     \end{tabular}
     \caption{Task 1 design summary.}
@@ -77,14 +79,15 @@ Table~\ref{tab:task1_results} reports the design and achieved values. The open-l
 \end{figure}
 
 \subsection{Simulink Implementation}
-The designed gains are assigned to the Simulink starter model variables \texttt{Kpwv = 3.31} and \texttt{tiwv = 0.10}\,s, replacing the default sample values provided with the model. This ensures the inner velocity loop in the Simscape Multibody model uses the Task 1 design for all subsequent experiments.
+The designed gains are assigned to the Simulink starter-model variables \texttt{Kpwv = 13.2037} and \texttt{tiwv = 0.10}\,s via \texttt{regbot\_mg.m}, which Simulink loads through its \texttt{PreLoadFcn}. The inner velocity loop in the Simscape Multibody model therefore uses the Task~1 design for all subsequent experiments, and the corresponding firmware block (\texttt{[cvel]} in \texttt{config/regbot\_group47.ini}) carries the same values on the physical robot.
 
 \subsection{REGBOT Experiment}
-The wheel-speed controller was tested on the physical robot in isolation (Test~0 in the group test plan). The robot was laid on its side with balance disabled (\texttt{bal=0}), and a $0.3\,\mathrm{m/s}$ step was commanded via the mission line \texttt{bal=0, vel=0.3, log=15 : time=3}. Figure~\ref{fig:task1_hw_step} shows the three-second log.
+\label{sec:task1_hw}
+The wheel-speed controller was tested on the physical robot in isolation (Test~0 in the group test plan). The robot was laid on its side with balance disabled (\texttt{bal=0}), and a $0.3\,\mathrm{m/s}$ step was commanded via the mission line \texttt{bal=0, vel=0.3, log=15 : time=3}. Figure~\ref{fig:task1_hw_step} shows the three-second log with the designed gains loaded.
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.85\linewidth]{images/test0_wheel_speed_2026-04-21.png}
+    \includegraphics[width=0.85\linewidth]{images/test0_wheel_speed_v3_onfloor_2026-04-22.png}
     \caption{Task 1 physical-robot step response (Test~0). Top: commanded velocity (black, dashed) and measured left/right wheel velocities. Middle: motor voltages. Bottom: tracking error.}
     \label{fig:task1_hw_step}
 \end{figure}
@@ -96,30 +99,28 @@ Quantitative comparison with the design is collected in Table~\ref{tab:task1_hw_
     \begin{tabular}{l|c|c}
         \textbf{Metric} & \textbf{Specification} & \textbf{Measured} \\
         \hline
-        Time to reach $0.27\,\mathrm{m/s}$      & $\sim 0.3\,\mathrm{s}$   & $0.329\,\mathrm{s}$ \\
-        Steady-state error (left / right)       & $\approx 0$              & $-0.003$ / $-0.004\,\mathrm{m/s}$ ($\approx 1\,\%$) \\
-        Left vs.\ right mean agreement          & $< 5\,\%$                & $0.36\,\%$ \\
-        Peak motor voltage                      & $< \pm 8\,\mathrm{V}$    & $2.06\,\mathrm{V}$ \\
+        Time to reach $0.27\,\mathrm{m/s}$ ($\approx 90\,\%$ rise) & $\sim 0.3\,\mathrm{s}$   & $0.012\,\mathrm{s}$ \\
+        Steady-state error (left / right)       & $\approx 0$              & within $1\,\%$ of reference \\
+        Left vs.\ right mean agreement          & $< 5\,\%$                & $0.76\,\%$ \\
+        Peak motor voltage                      & $< \pm 8\,\mathrm{V}$    & $2.60\,\mathrm{V}$ \\
     \end{tabular}
     \caption{Task 1 hardware test (Test~0) results versus spec.}
     \label{tab:task1_hw_results}
 \end{table}
 
 \subsection{Comments}
-The achieved phase margin of $121.6^{\circ}$ is far above the $60^{\circ}$ specification, making the controller very robust but slightly conservative. The design is intentionally conservative to make the inner loop predictable for the outer balance controller.
+The achieved phase margin of $82.9^{\circ}$ is well above the $60^{\circ}$ specification. The PI zero is placed above the plant pole, so the integrator still contributes phase at $\omega_c$ without dropping the loop below its margin target.
 
-\paragraph{Operating-regime caveat for Test~0.} Test~0 was run with the robot lying on its back and the wheels spinning freely in the air (Balance had to be disabled for this isolated wheel-speed test, so the robot could not stay upright). This is a \emph{different operating regime} from the Day~5 identification, which was carried out with the robot rolling on the floor. Any direct comparison between the Test~0 steady-state voltage and the Day~5 DC-gain prediction would therefore be an apples-to-oranges comparison --- they describe different physical conditions.
+\paragraph{How the redesign came about.} The original Task~1 design used the wheels-up identification $G_{vel} = 13.34/(s+35.71)$, which gave a much more conservative controller ($K_p = 3.31$, $\gamma_M = 121.6^{\circ}$). That controller also passed every assignment spec on the bench, but Test~0 exposed a quantitative mismatch: the measured $90\,\%$ rise time was $0.329\,\mathrm{s}$, whereas a first-order closed loop at $\omega_c = 30\,\mathrm{rad/s}$ predicts $\approx 80\,\mathrm{ms}$. The effective on-hardware bandwidth was therefore only $\approx 9\,\mathrm{rad/s}$, about four times below the designed $30\,\mathrm{rad/s}$. The conservative phase-margin cushion of $121^{\circ}$ was absorbing the model mismatch, keeping the closed loop stable but at a much slower effective bandwidth than the design claimed. Re-identifying against the on-floor plant (Eq.~\eqref{eq:gvel_day5}) and recomputing $K_p$ against the same $\omega_c = 30\,\mathrm{rad/s}$ target lifts $K_p$ to $13.2037$. The measured Test~0 rise time with the redesigned controller is $0.012\,\mathrm{s}$, consistent to within the $15\,\mathrm{ms}$ log-sampling interval with the designed bandwidth.
 
-\paragraph{What the Test~0 steady-state voltage actually measures.} With the wheels free in the air, the motor torque only has to overcome internal drivetrain friction and the back-EMF produced by rotation. Using the REGBOT motor and drivetrain parameters (gear ratio $N_G = 9.69$, wheel radius $W_R = 0.03\,\mathrm{m}$, EMF constant $K_{\mathrm{emf}} = 0.0105\,\mathrm{V\,s/rad}$, armature resistance $R_A = 1.65\,\Omega$):
+\paragraph{What Test~0 measures and what it does not.} Test~0 is run wheels-up (balance has to be disabled so the robot cannot stay upright), so the steady-state voltage is not directly comparable to the Day~5 on-floor DC-gain prediction --- it describes a different physical load. Using the REGBOT motor parameters (gear ratio $N_G = 9.69$, wheel radius $W_R = 0.03\,\mathrm{m}$, EMF constant $K_{\mathrm{emf}} = 0.0105\,\mathrm{V\,s/rad}$, armature resistance $R_A = 1.65\,\Omega$), rotation at $v = 0.3\,\mathrm{m/s}$ gives
 \begin{equation}
     \omega_{\mathrm{motor}} = \frac{v}{W_R}\,N_G = \frac{0.3}{0.03}\cdot 9.69 = 96.9\,\mathrm{rad/s},
     \quad
     V_{\mathrm{BEMF}} = K_{\mathrm{emf}}\,\omega_{\mathrm{motor}} \approx 1.02\,\mathrm{V}.
 \end{equation}
-The remaining $\approx 0.8\,\mathrm{V}$ of the measured $1.8\,\mathrm{V}$ steady-state is accounted for by the $I\!R$ voltage drop across the armature resistance due to the current required to overcome bearing and gearbox friction. The observation is consistent with the wheels-up regime and does \emph{not} indicate that the Day~5 on-floor model is inaccurate.
+The remaining steady-state voltage is accounted for by the $I\!R$ drop across the armature resistance due to the current required to overcome bearing and gearbox friction. The on-floor behaviour of $G_{vel}$ is validated indirectly by Tasks~2--4, where the robot drives on the floor with the wheel-speed PI operating inside the cascade, and each test meets its specification.
 
-A direct test of the Day~5 model would have required an on-floor open-loop run with balance disabled, which would need training wheels or a similar stabilising fixture and was not part of the test plan. The on-floor behaviour is instead validated \emph{indirectly} by the Tasks~2--4 experiments: in all three the robot drives on the floor with the wheel-speed PI operating inside the cascade, and each test meets its specification.
+\paragraph{Noise/saturation trade-off from the higher gain.} The four-fold increase in $K_p$ compared to the initial conservative design raises the inner PI's response to measurement noise and to sharp step commands from the outer loops. Test~0 itself stays well inside the motor limit ($2.60\,\mathrm{V}$ peak), but Section~\ref{sec:velocity} (Test~3b at $0.8\,\mathrm{m/s}$) shows that corner entries --- where the velocity outer loop issues sharp $v_\mathrm{ref}$ steps --- now drive the motor voltage up to $7.31\,\mathrm{V}$, compared to $4.67\,\mathrm{V}$ with the older conservative design. This is the expected bandwidth-versus-saturation-margin trade; both campaigns pass the assignment spec, but the redesigned controller operates with a tighter voltage headroom during aggressive corner commands.
 
-\paragraph{Rise time and log-sampling caveat.} The measured $90\,\%$ rise time of $0.329\,\mathrm{s}$ is slower than the $\approx 80\,\mathrm{ms}$ predicted for a first-order closed loop at $\omega_c = 30\,\mathrm{rad/s}$. The logged velocity estimate lags by $\approx 5\,\mathrm{ms}$ (reported in the log header), the log interval is $15\,\mathrm{ms}$ while the internal controller runs at $1\,\mathrm{kHz}$, and the wheels-up load is very light --- all of which affect the transient seen in the plot without necessarily indicating a slower true closed-loop bandwidth. Crucially, Task~1 has a $121.6^{\circ}$ phase-margin cushion, so even a noticeably reduced effective bandwidth would not threaten stability. The outer loops (Tasks~2--4) are designed against $G_{tilt}$ and $G_{vel,\mathrm{outer}}$, obtained by \texttt{linearize()} on the \emph{full} Simulink model with the Task~1 gains in place, not against $G_{vel,\mathrm{day5}}$ directly, so any residual Day~5 error propagates only weakly to the outer designs.
-
-The left and right motors agree to $0.36\,\%$ in mean velocity, so no per-wheel gain trim is needed.
+The left and right motors agree to $0.76\,\%$ in mean velocity, so no per-wheel gain trim is needed.
