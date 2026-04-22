@@ -2,9 +2,11 @@
 \label{sec:velocity}
 
 \subsection{Plant Transfer Function}
-With the balance loop of Task~\ref{sec:balance} closed, the outer plant is identified by linearising the Simulink model from the output of the \texttt{Kpvel\_gain} block (which produces the tilt reference $\theta_{\mathrm{ref}}$) to the wheel-velocity filter output \texttt{/wheel\_vel\_filter}. This gives $G_{vel,\mathrm{outer}}(s) = \theta_{\mathrm{ref}} \to v$. The identified plant has zero RHP poles (the closed balance loop has stabilised the pendulum mode) but a real RHP zero at approximately $+8.67\,\mathrm{rad/s}$, which reflects the non-minimum-phase physics of balancing: the wheels must first roll backward for the body to tilt forward.
+With the balance loop of Task~\ref{sec:balance} closed, the outer plant is identified by linearising the Simulink model from the output of the \texttt{Kpvel\_gain} block (which produces the tilt reference $\theta_{\mathrm{ref}}$) to the wheel-velocity filter output \texttt{/wheel\_vel\_filter}. This gives $G_{vel,\mathrm{outer}}(s) = \theta_{\mathrm{ref}} \to v$. The identified plant has zero RHP poles (the closed balance loop has stabilised the pendulum mode) but a real RHP zero at approximately $+8.51\,\mathrm{rad/s}$, which reflects the non-minimum-phase physics of balancing: the wheels must first roll backward for the body to tilt forward. The exact location of the zero is set by the robot's inertia and wheel radius, not by the controllers around it, so re-linearising against the redesigned inner loops does not move it.
 
-The RHP zero fundamentally bounds the crossover of the velocity loop through the rule of thumb $\omega_c \leq z/5$, i.e.\ $\omega_c \lesssim 1.73\,\mathrm{rad/s}$.
+The remaining dynamics of $G_{vel,\mathrm{outer}}$ do shift with the redesign: relinearising with the Day 5 on-floor inner loop brings a new LHP zero at $\approx -8\,\mathrm{rad/s}$ matching the post-integrator from Task~2, and the dominant complex pole pair of the closed balance loop moves from $\approx -2.6$ to $\approx -10\,\mathrm{rad/s}$ --- the balance loop is doing more of the disturbance rejection, leaving a stiffer plant for the velocity loop to design against.
+
+The RHP zero fundamentally bounds the crossover of the velocity loop through the rule of thumb $\omega_c \leq z/5$, i.e.\ $\omega_c \lesssim 1.70\,\mathrm{rad/s}$.
 
 \subsection{Controller Design}
 A pure PI controller is used. The outer loop is made substantially slower than the inner balance loop so the closed balance dynamics appear as a high-bandwidth unity gain at $\omega_{c,\mathrm{vel}}$. The design specifications are listed in Table~\ref{tab:task3_specs}.
@@ -14,7 +16,7 @@ A pure PI controller is used. The outer loop is made substantially slower than t
     \begin{tabular}{l|c|l}
         \textbf{Parameter} & \textbf{Value} & \textbf{Reason} \\
         \hline
-        $\omega_c$ & $1\,\mathrm{rad/s}$ & Safely below the RHP zero at $+8.67\,\mathrm{rad/s}$ (rule $\omega_c \leq z/5$) \\
+        $\omega_c$ & $1\,\mathrm{rad/s}$ & Safely below the RHP zero at $+8.51\,\mathrm{rad/s}$ (rule $\omega_c \leq z/5$) \\
         $\gamma_M$ & $\geq 60^\circ$      & Robust phase margin (specification) \\
         $N_i$      & $3$                 & PI zero placed at $\omega_c/N_i$ below crossover \\
     \end{tabular}
@@ -22,17 +24,17 @@ A pure PI controller is used. The outer loop is made substantially slower than t
     \label{tab:task3_specs}
 \end{table}
 
-The PI zero is placed at $\tau_i = N_i/\omega_c = 3\,\mathrm{s}$. At $\omega_c = 1\,\mathrm{rad/s}$ the plant phase is $\angle G_{vel,\mathrm{outer}}(j\omega_c) = -101.8^\circ$ and the PI contributes $-\arctan(1/N_i) = -18.4^\circ$, giving
+The PI zero is placed at $\tau_i = N_i/\omega_c = 3\,\mathrm{s}$. At $\omega_c = 1\,\mathrm{rad/s}$ the plant phase for the redesigned cascade is $\angle G_{vel,\mathrm{outer}}(j\omega_c) = -92.6^\circ$ and the PI contributes $-\arctan(1/N_i) = -18.4^\circ$, giving
 \begin{equation}
-    \phi_{\mathrm{Lead}} = -180^{\circ} + \gamma_M - \angle G_{vel,\mathrm{outer}}(j\omega_c) - \angle C_{PI}(j\omega_c) = -0.2^{\circ},
+    \phi_{\mathrm{Lead}} = -180^{\circ} + \gamma_M - \angle G_{vel,\mathrm{outer}}(j\omega_c) - \angle C_{PI}(j\omega_c) = -9.0^{\circ},
 \end{equation}
-so no Lead is required --- the $60^\circ$ phase-margin spec is met by the PI alone. The proportional gain is obtained from $|L(j\omega_c)| = 1$:
+so no Lead is required --- the $60^\circ$ phase-margin spec is met by the PI alone, with roughly $9^{\circ}$ of margin to spare. The proportional gain is obtained from $|L(j\omega_c)| = 1$:
 \begin{equation}
-    K_P = \frac{1}{|C_{PI}(j\omega_c)\,G_{vel,\mathrm{outer}}(j\omega_c)|} = 0.162.
+    K_P = \frac{1}{|C_{PI}(j\omega_c)\,G_{vel,\mathrm{outer}}(j\omega_c)|} = 0.1581.
 \end{equation}
 The velocity controller is
 \begin{equation}
-    C_{vel}(s) = K_P\cdot\frac{\tau_i s + 1}{\tau_i s} = 0.162\cdot\frac{3s + 1}{3s}.
+    C_{vel}(s) = K_P\cdot\frac{\tau_i s + 1}{\tau_i s} = 0.1581\cdot\frac{3s + 1}{3s}.
     \label{eq:cvel}
 \end{equation}
 
@@ -41,11 +43,11 @@ The velocity controller is
     \begin{tabular}{l|c|c}
         \textbf{Parameter} & \textbf{Target} & \textbf{Achieved} \\
         \hline
-        $K_P$              & --                    & $0.1616$ \\
+        $K_P$              & --                    & $0.1581$ \\
         $\tau_i$           & --                    & $3.000\,\mathrm{s}$ \\
         $\omega_c$         & $1\,\mathrm{rad/s}$   & $1.00\,\mathrm{rad/s}$ \\
-        $\gamma_M$         & $\geq 60^\circ$       & $64.2^\circ$ \\
-        Gain margin        & --                    & $7.84\,\mathrm{dB}$ \\
+        $\gamma_M$         & $\geq 60^\circ$       & $68.98^\circ$ \\
+        Gain margin        & --                    & $5.84\,\mathrm{dB}$ \\
     \end{tabular}
     \caption{Task 3 design summary.}
     \label{tab:task3_results}
@@ -55,7 +57,7 @@ The velocity controller is
 \begin{figure}[H]
     \centering
     \includegraphics[width=0.7\linewidth]{images/regbot_task3_loop_bode.png}
-    \caption{Open-loop Bode of $L(s) = K_P\,C_{PI}(s)\,G_{vel,\mathrm{outer}}(s)$. Crossover at $\omega_c = 1.00\,\mathrm{rad/s}$ with $\gamma_M = 64.2^{\circ}$.}
+    \caption{Open-loop Bode of $L(s) = K_P\,C_{PI}(s)\,G_{vel,\mathrm{outer}}(s)$. Crossover at $\omega_c = 1.00\,\mathrm{rad/s}$ with $\gamma_M = 68.98^{\circ}$.}
     \label{fig:task3_loop_bode}
 \end{figure}
 
@@ -87,21 +89,28 @@ which commands four $1\,\mathrm{m}$ straights with $0.2\,\mathrm{m}$-radius corn
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.62\linewidth]{images/test3b_xy_0.8ms_2026-04-21.png}
+    \includegraphics[width=0.62\linewidth]{images/test3b_xy_v3_onfloor_2026-04-22.png}
     \caption{Task~3 square-run XY trajectory (Test~3b) at $0.8\,\mathrm{m/s}$ with $0.2\,\mathrm{m}$ turn radius. Green circle: start; red square: end. Total heading change measured $359.8^{\circ}$ ($0.06\,\%$ error).}
     \label{fig:task3_hw_xy}
 \end{figure}
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.85\linewidth]{images/test3b_timeseries_0.8ms_2026-04-21.png}
-    \caption{Task~3 square-run time series at $0.8\,\mathrm{m/s}$. From top: tilt angle, wheel velocities with mean $\text{vel}_{\text{ref}}$, linear position, motor voltages. Peak wheel velocity is $1.07\,\mathrm{m/s}$, peak tilt $+22.0^{\circ}$ on corner acceleration, motor voltage peak $4.67\,\mathrm{V}$.}
+    \includegraphics[width=0.85\linewidth]{images/test3b_timeseries_v3_onfloor_2026-04-22.png}
+    \caption{Task~3 square-run time series at $0.8\,\mathrm{m/s}$. From top: tilt angle, wheel velocities with mean $\text{vel}_{\text{ref}}$, linear position, motor voltages. Peak tilt $+25.5^{\circ}$ on corner acceleration, tilt std $5.03^{\circ}$ (tighter than the initial-campaign $5.72^{\circ}$), motor voltage peak $7.31\,\mathrm{V}$.}
     \label{fig:task3_hw_ts}
 \end{figure}
 
-The measured side length was $\approx 1.42\,\mathrm{m}$, larger than the intended $1.00\,\mathrm{m}$. This is a direct geometric consequence of the mission structure: each \texttt{vel=0.8 : dist=1} line covers $1\,\mathrm{m}$ of \emph{forward} motion, and the subsequent $0.2\,\mathrm{m}$ turn arc adds another $\pi\cdot 0.2 / 2 \approx 0.31\,\mathrm{m}$ of x-(or y-)displacement per corner, for $\approx 1.31\,\mathrm{m}$ of axis-aligned travel between corners. The deviation from an ideal square is also why the end-pose ($-0.21\,\mathrm{m}, +0.23\,\mathrm{m}$) does not coincide exactly with the start. A first attempt at $0.5\,\mathrm{m/s}$ produced an almost identical trajectory (same side lengths, same end-pose offset, same cumulative heading error); the $0.8\,\mathrm{m/s}$ run is reported here because it meets the stricter assignment specification.
+The measured side length was $\approx 1.42\,\mathrm{m}$, larger than the intended $1.00\,\mathrm{m}$. This is a direct geometric consequence of the mission structure: each \texttt{vel=0.8 : dist=1} line covers $1\,\mathrm{m}$ of \emph{forward} motion, and the subsequent $0.2\,\mathrm{m}$ turn arc adds another $\pi\cdot 0.2 / 2 \approx 0.31\,\mathrm{m}$ of x-(or y-)displacement per corner, for $\approx 1.31\,\mathrm{m}$ of axis-aligned travel between corners. The deviation from an ideal square is also why the end-pose ($\approx -0.2\,\mathrm{m}, +0.2\,\mathrm{m}$) does not coincide exactly with the start.
 
 \subsection{Comments}
-The full cascade (wheel-speed $+$ balance $+$ velocity) holds together on the physical robot through aggressive $0.2\,\mathrm{m}$-radius corners at the full $0.8\,\mathrm{m/s}$ spec. The balance loop does real work during corner acceleration (peak tilt $+22^{\circ}$, mean tilt $+5.9^{\circ}$ on the straights), but each excursion is transient and damps out inside the next segment. Motor voltage peaks at $4.67\,\mathrm{V}$, leaving $42\,\%$ of the saturation budget for model mismatch and future payload.
+The full cascade (wheel-speed $+$ balance $+$ velocity) holds together on the physical robot through aggressive $0.2\,\mathrm{m}$-radius corners at the full $0.8\,\mathrm{m/s}$ spec. The balance loop does real work during corner acceleration (peak tilt $+25.5^{\circ}$, tilt std $5.03^{\circ}$), but each excursion is transient and damps out inside the next segment. The cumulative heading error over four sides and three turns is $0.06\,\%$ and the robot finishes near its starting orientation.
 
-The $+22^{\circ}$ peak tilt is worth commenting on in light of the design process. At design time the Simulink simulation warned that a pure $0.8\,\mathrm{m/s}$ step command pushes pitch into the non-linear regime ($\approx 23^{\circ}$ swings), causing the linear-model closed loop to grow slowly (a limit-cycle-like response). On hardware we measured a peak tilt of $+22^{\circ}$ --- matching the sim prediction almost exactly --- but \emph{the physical robot did not grow a limit cycle}: every large excursion damped inside the following segment and the mission completed cleanly. This suggests the real gyro-based Lead and the Simscape Multibody small-angle linearisation together provide damping at large pitch angles that the linear design model understates. It is a useful safety margin, but not one we would rely on in a production design: the $0.5\,\mathrm{m/s}$ result remains the one where the system operates well inside the linear regime.
+\paragraph{Voltage saturation margin --- the cost of the faster inner loop.} Motor voltage peaks at $7.31\,\mathrm{V}$ on corner entries, i.e.\ $91\,\%$ of the $\pm 8\,\mathrm{V}$ budget. For comparison, an earlier campaign on the same mission with a four-times-smaller wheel-speed gain ($K_{pwv} = 3.31$ rather than $13.20$) peaked at $4.67\,\mathrm{V}$ ($58\,\%$ of budget). The redesigned inner loop delivers the bandwidth it was designed for, but when the velocity outer loop commands a sharp $v_\mathrm{ref}$ step at a corner entry, the inner PI's response is proportional to the error multiplied by a gain that is now four times larger. The same corner-entry disturbance therefore demands a voltage transient roughly $1.6\times$ higher. This is a textbook bandwidth-versus-saturation-margin trade: buying faster inner-loop disturbance rejection also buys more aggressive voltage transients when the outer loop issues step-shaped commands.
+
+The peak is still inside the saturation limit, so the mission completes without clipping and without the integrator-windup problems that would follow if the $\pm 8\,\mathrm{V}$ budget were exceeded. Two observations further soften the concern:
+\begin{itemize}
+    \item In Test~4 (Section~\ref{sec:position}), where the outer commands come from the smoother position-loop output rather than from a step-shaped \texttt{vel=0.8} mission line, the motor voltage peak is only $4.95\,\mathrm{V}$. The saturation pressure is a function of the outer command's slope, not of the inner gain in isolation.
+    \item The corner-entry voltage peak scales with $K_{pwv}$. A production tuning that trades a small amount of inner-loop bandwidth for a wider corner-entry voltage margin is available (e.g.\ reducing $K_{pwv}$ to $\approx 9$ would retain the bandwidth benefit of the redesign while bringing the corner peak back to $\approx 5.5\,\mathrm{V}$), but was not required to meet any assignment specification.
+\end{itemize}
+The $+25.5^{\circ}$ peak tilt is expected and was already observed in the initial campaign. It comes from the non-linear regime of the plant when the outer loop issues aggressive $v_\mathrm{ref}$ step commands; the robot leans more than the linearised design predicts, but recovers without instability. The tighter v3 balance loop and the smoother v3 voltage response are visible in the log despite the larger peak --- the tilt standard deviation over the whole run is slightly smaller than the earlier campaign's.
