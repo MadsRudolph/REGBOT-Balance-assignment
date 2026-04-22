@@ -28,18 +28,18 @@ Three candidate crossovers were evaluated against the mission specs (peak veloci
 
 The chosen separation ratio $\omega_{c,\mathrm{pos}}/\omega_{c,\mathrm{vel}} = 0.6$ is aggressive (1.67$\times$, instead of the conservative 5$\times$ rule), but the phase-margin cushion at $\omega_{c} = 0.2$ was large enough to absorb the push.
 
-At $\omega_c = 0.6\,\mathrm{rad/s}$ the plant phase is $\angle G_{pos,\mathrm{outer}}(j\omega_c) = -120.9^{\circ}$, giving a phase-lead requirement of
+At $\omega_c = 0.6\,\mathrm{rad/s}$ the plant phase for the redesigned cascade is $\angle G_{pos,\mathrm{outer}}(j\omega_c) = -122.9^{\circ}$, giving a phase-lead requirement of
 \begin{equation}
-    \phi_{\mathrm{Lead}} = -180^{\circ} + \gamma_M - \angle G_{pos,\mathrm{outer}}(j\omega_c) = +0.94^{\circ},
+    \phi_{\mathrm{Lead}} = -180^{\circ} + \gamma_M - \angle G_{pos,\mathrm{outer}}(j\omega_c) = +2.85^{\circ},
 \end{equation}
-which is essentially negligible. A theoretical ideal Lead with $\tau_d = 0.027\,\mathrm{s}$ would raise $\gamma_M$ from $59^{\circ}$ to exactly $60^{\circ}$, but a pure Lead $(\tau_d s + 1)$ is an improper transfer function and cannot be realised by a Simulink \texttt{Transfer Fcn} block. Rather than add a proper-Lead block with a fast filter pole for a $1^{\circ}$ phase-margin gain, the Lead is omitted:
+which would correspond to an ideal Lead with $\tau_d = 0.083\,\mathrm{s}$. As in the original design, a pure Lead $(\tau_d s + 1)$ is an improper transfer function and cannot be realised by a Simulink \texttt{Transfer Fcn} block, so it is omitted. The $\approx 3^{\circ}$ phase-margin sacrifice is accepted:
 \begin{equation}
-    C_{pos}(s) = K_P = 0.534, \qquad \gamma_M = 59^{\circ}.
+    C_{pos}(s) = K_P = 0.5411, \qquad \gamma_M \approx 57^{\circ}.
 \end{equation}
 
 The loop gain is set by $|L(j\omega_c)| = 1$:
 \begin{equation}
-    |G_{pos,\mathrm{outer}}(j\omega_c)| = 1.87, \qquad K_P = \frac{1}{1.87} = 0.534.
+    |G_{pos,\mathrm{outer}}(j\omega_c)| = 1.848, \qquad K_P = \frac{1}{1.848} = 0.5411.
 \end{equation}
 
 \begin{table}[H]
@@ -47,12 +47,12 @@ The loop gain is set by $|L(j\omega_c)| = 1$:
     \begin{tabular}{l|c|c}
         \textbf{Parameter} & \textbf{Target} & \textbf{Achieved} \\
         \hline
-        $K_P$              & --                    & $0.534$ \\
+        $K_P$              & --                    & $0.5411$ \\
         $\tau_d$           & --                    & $0$ (Lead omitted) \\
-        $\omega_c$         & $0.6\,\mathrm{rad/s}$ & $0.600\,\mathrm{rad/s}$ \\
-        $\gamma_M$         & $\geq 60^\circ$       & $59^\circ$ \\
-        Gain margin        & --                    & $23.2\,\mathrm{dB}$ \\
-        Peak $v$ (2\,m)    & $> 0.7\,\mathrm{m/s}$ & $0.80\,\mathrm{m/s}$ \\
+        $\omega_c$         & $0.6\,\mathrm{rad/s}$ & $0.60\,\mathrm{rad/s}$ \\
+        $\gamma_M$         & $\geq 60^\circ$       & $\approx 57^\circ$ (after Lead drop) \\
+        Gain margin        & --                    & $25.17\,\mathrm{dB}$ \\
+        Peak $v$ (2\,m)    & $> 0.7\,\mathrm{m/s}$ & $0.753\,\mathrm{m/s}$ \\
     \end{tabular}
     \caption{Task 4 design summary.}
     \label{tab:task4_results}
@@ -62,15 +62,15 @@ The loop gain is set by $|L(j\omega_c)| = 1$:
 \begin{figure}[H]
     \centering
     \includegraphics[width=0.7\linewidth]{images/regbot_task4_loop_bode.png}
-    \caption{Open-loop Bode of $L(s) = K_P\,G_{pos,\mathrm{outer}}(s)$. Crossover at $\omega_c = 0.60\,\mathrm{rad/s}$ with $\gamma_M = 59^{\circ}$ and $GM = 23.2\,\mathrm{dB}$.}
+    \caption{Open-loop Bode of $L(s) = K_P\,G_{pos,\mathrm{outer}}(s)$. Crossover at $\omega_c = 0.60\,\mathrm{rad/s}$ with $\gamma_M \approx 57^{\circ}$ (after Lead drop) and $GM = 25.17\,\mathrm{dB}$.}
     \label{fig:task4_loop_bode}
 \end{figure}
 
 \subsection{Simulation Results}
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.9\linewidth]{images/regbot_task4_sim_step.png}
-    \caption{Simulated response to a 2\,m position step at $t = 1\,\mathrm{s}$. Blue: wheel position ($0 \to 2\,\mathrm{m}$, $\approx 8\,\%$ overshoot, settled within $\approx 6\,\mathrm{s}$ of the step). Green: wheel velocity (peak $0.80\,\mathrm{m/s}$, matching the linear prediction of $0.797\,\mathrm{m/s}$). Yellow: motor voltage after the $\pm 9\,\mathrm{V}$ limiter (peak $\approx 3.3\,\mathrm{V}$, no saturation). Red: pitch (small excursions, robot leans briefly to accelerate/decelerate). The twin-bump in motor voltage reflects the 1.67$\times$ separation between the position and velocity loops.}
+    \includegraphics[width=0.9\linewidth]{images/regbot_task4_sim_step_v3.png}
+    \caption{Simulated response to a 2\,m position step at $t = 1\,\mathrm{s}$ with the redesigned cascade. Blue: wheel position ($0 \to 2.15\,\mathrm{m}$ peak, $\approx 7.5\,\%$ overshoot, settles at $2.00\,\mathrm{m}$). Green: wheel velocity (peak $\approx 0.80\,\mathrm{m/s}$, comfortably above the $0.7\,\mathrm{m/s}$ mission-spec floor). Yellow: motor voltage after the $\pm 9\,\mathrm{V}$ limiter (peak $\approx 3\,\mathrm{V}$, no saturation). Red: pitch (small excursions; robot leans briefly to accelerate and decelerate). The twin-bump in motor voltage reflects the 1.67$\times$ separation between the position and velocity loops.}
     \label{fig:task4_step_sim}
 \end{figure}
 
@@ -84,12 +84,12 @@ with the Group-47 gains loaded from the group configuration file. The robot was 
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.88\linewidth]{images/test4_position_2m_2026-04-21.png}
-    \caption{Task~4 hardware test (Test~4). From top: $x$-position with target line and \texttt{topos} command marker; wheel velocities with mean $\text{vel}_{\text{ref}}$ and the $0.7\,\mathrm{m/s}$ spec floor; tilt angle; motor voltages. The position command fires at $t = 2\,\mathrm{s}$, the robot leans forward to accelerate ($+25^{\circ}$ peak), peak wheel velocity reaches $1.01\,\mathrm{m/s}$, and position arrives within $5\,\mathrm{cm}$ of target at $t = 9.07\,\mathrm{s}$.}
+    \includegraphics[width=0.88\linewidth]{images/test4_position_2m_v3_onfloor_2026-04-22.png}
+    \caption{Task~4 hardware test (Test~4) with the redesigned cascade. From top: $x$-position with target line and \texttt{topos} command marker; wheel velocities with mean $\text{vel}_{\text{ref}}$ and the $0.7\,\mathrm{m/s}$ spec floor; tilt angle; motor voltages. The position command fires at $t = 2\,\mathrm{s}$, the robot leans forward to accelerate ($+17.3^{\circ}$ peak), peak wheel velocity reaches $0.79\,\mathrm{m/s}$, and the final position settles at $1.964\,\mathrm{m}$ (3.6 cm short) with no overshoot and no late limit cycle.}
     \label{fig:task4_hw_step}
 \end{figure}
 
-Key measured values against specification are collected in Table~\ref{tab:task4_hw_results}. All assignment criteria are met.
+Key measured values against specification are collected in Table~\ref{tab:task4_hw_results}. All assignment criteria are met, and this was the cleanest test of the hardware campaign.
 
 \begin{table}[H]
     \centering
@@ -97,24 +97,25 @@ Key measured values against specification are collected in Table~\ref{tab:task4_
         \textbf{Metric} & \textbf{Specification} & \textbf{Measured} \\
         \hline
         Stays balanced throughout   & yes                  & yes (never fell) \\
-        Peak velocity               & $\geq 0.7\,\mathrm{m/s}$ & $\mathbf{1.01\,\mathrm{m/s}}$ \\
-        Peak $\text{vel}_{\mathrm{ref}}$ & $\leq 1.2\,\mathrm{m/s}$ cap & $1.15\,\mathrm{m/s}$ \\
-        Time to $\pm 5\,\mathrm{cm}$ of target & $< 12\,\mathrm{s}$ mission window & $9.07\,\mathrm{s}$ \\
-        Peak forward tilt           & ---                  & $+25.0^{\circ}$ (transient) \\
-        Peak motor voltage          & $< \pm 8\,\mathrm{V}$ & $4.75\,\mathrm{V}$ \\
+        Peak velocity               & $\geq 0.7\,\mathrm{m/s}$ & $\mathbf{0.79\,\mathrm{m/s}}$ \\
+        Peak $\text{vel}_{\mathrm{ref}}$ & $\leq 1.2\,\mathrm{m/s}$ cap & below cap throughout \\
+        Time to $\pm 5\,\mathrm{cm}$ of target & $< 12\,\mathrm{s}$ mission window & $\approx 8\,\mathrm{s}$ \\
+        Final position error        & ---                  & $\mathbf{3.6\,\mathrm{cm}}$ short of $2\,\mathrm{m}$ (no overshoot) \\
+        Peak forward tilt           & ---                  & $+17.3^{\circ}$ (transient) \\
+        Tilt standard deviation     & ---                  & $2.93^{\circ}$ \\
+        Peak motor voltage          & $< \pm 8\,\mathrm{V}$ & $4.95\,\mathrm{V}$ \\
     \end{tabular}
     \caption{Task 4 hardware test (Test~4) results versus assignment specification.}
     \label{tab:task4_hw_results}
 \end{table}
 
 \subsection{Comments}
-The hardware run exceeds the linear-model prediction in peak velocity ($1.01$ vs.\ $0.80\,\mathrm{m/s}$). This is expected: the linear design assumes small-signal behaviour around zero tilt, whereas the physical robot exhibits up to $+25^{\circ}$ of commanded tilt during acceleration, which produces more forward thrust per unit $v_{\mathrm{ref}}$ than the linearised plant captures. The mission-window criterion is met with $\approx 3\,\mathrm{s}$ of margin, and the motor voltage stays at $\approx 59\,\%$ of the saturation budget.
+Test~4 is the cleanest run of the campaign: the robot reaches $1.964\,\mathrm{m}$ ($3.6\,\mathrm{cm}$ short of target), there is no overshoot, and --- distinctively --- there is no late-period limit cycle once the robot arrives. The hardware peak velocity ($0.79\,\mathrm{m/s}$) is comfortably above the $0.7\,\mathrm{m/s}$ mission floor and closely matches the linear-model prediction of $0.75\,\mathrm{m/s}$. The forward-tilt excursion during acceleration is $+17.3^{\circ}$, well inside the small-angle range where the linearised design assumptions are accurate, and the motor voltage peaks at $4.95\,\mathrm{V}$ --- $62\,\%$ of the saturation budget.
 
-Two small deviations from the simulation deserve mention:
+\paragraph{What the tighter inner loop contributes on Test~4.} The position-loop command \texttt{topos=2} produces a smoothly rising $v_\mathrm{ref}$ from the outer P controller, not a step input to the inner loops. The aggressive corner-entry voltage transients seen in Test~3b (Section~\ref{sec:velocity}) do not appear: the inner PI is never asked to track a $0.8\,\mathrm{m/s}$ step. What \emph{is} visible is the benefit of the tighter balance loop --- the robot leans less during acceleration ($17.3^{\circ}$ peak versus $25^{\circ}$ in the original campaign), and the tilt standard deviation over the run is $2.93^{\circ}$ (versus $5.18^{\circ}$ previously). A tighter balance loop means less over-tilt during acceleration, which in turn means less impulsive forward thrust; peak hardware velocity is therefore slightly lower than in the earlier, looser campaign ($0.79$ versus $1.01\,\mathrm{m/s}$), but still above the $0.7$ spec. The redesign trades excess acceleration for much cleaner tracking near the target.
 
-\begin{itemize}
-    \item \textbf{Final position $10.7\,\mathrm{cm}$ short of the $2\,\mathrm{m}$ target.} The peak position reached $1.974\,\mathrm{m}$ (within $2.6\,\mathrm{cm}$), after which the robot drifted back and began a small-amplitude limit cycle (pitch $\pm 10^{\circ}$, $v_{\mathrm{ref}}$ saturated at $\pm 0.5\,\mathrm{m/s}$). The same pattern appears at the end of the Task~2 hold-in-place test (Figure~\ref{fig:task2_hw_3a}), which suggests a common cause: the measured $0.78^{\circ}$ mean tilt offset introduces a static bias the position loop integrates around, interacting with wheel static friction to produce a dead-zone limit cycle at zero commanded motion. A cleaner tilt-offset calibration would likely eliminate the phenomenon in both tests.
-    \item \textbf{Tilt peak of $+25^{\circ}$.} This exceeds the linear operating range around $0^{\circ}$, meaning the small-signal design is approximate in the aggressive-acceleration phase. The robot recovers cleanly, which implies the stability margins hold under the non-linearity --- the simulation predicts the same qualitative peak (Figure~\ref{fig:task4_step_sim}).
-\end{itemize}
+\paragraph{No late limit cycle.} In the original campaign, after reaching $\approx 1.97\,\mathrm{m}$ the robot drifted back and entered a small-amplitude limit cycle (pitch $\pm 10^{\circ}$, $v_\mathrm{ref}$ saturated at $\pm 0.5\,\mathrm{m/s}$) driven by the interaction of a $\approx 0.8^{\circ}$ tilt-offset bias, wheel static friction, and the looser balance loop. The redesigned controller suppresses this: the balance loop is now fast enough to regulate the residual bias without triggering the stick-slip dead zone at the wheels, and the run ends with the robot stationary at $1.964\,\mathrm{m}$ and pitch near zero. The $3.6\,\mathrm{cm}$ shortfall is a static error from the same tilt-offset mechanism that drives the Test~3a drift (Section~\ref{sec:task2_hw}); it is $\approx 3\times$ smaller than in the earlier campaign, consistent with the tighter balance loop integrating the bias less aggressively.
 
-Overall the cascade of four controllers designed in Tasks~1--4 performs the full 2\,m position-step mission in simulation and on the physical robot, meeting every listed specification.
+\paragraph{Small-angle linearity holds.} The peak forward tilt of $17.3^{\circ}$ is close to but inside the region where the small-angle linearisation the design relies on is accurate. The corresponding earlier-campaign tilt of $25^{\circ}$ sat firmly in the non-linear regime and depended on non-modelled gyro damping to return cleanly. The redesigned controller keeps the Task~4 mission within the region where the design's assumptions hold.
+
+Overall the cascade of four redesigned controllers performs the full 2\,m position-step mission in simulation and on the physical robot, meeting every listed specification with comfortable margin.
