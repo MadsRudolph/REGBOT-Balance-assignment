@@ -19,3 +19,12 @@ Two plant transfer functions identified directly from the Simulink model are use
 \end{itemize}
 
 Both identified plants contain exactly one right-half-plane (RHP) pole around $+8.7$--$+10.6\,\mathrm{rad/s}$, which is the inverted-pendulum falling mode. By the Nyquist stability criterion $Z = N + P$, a stable closed-loop requires one counter-clockwise encirclement of the critical point $-1$.
+
+The full top-level Simulink implementation of the cascade is shown in Figure~\ref{fig:simulink_top_level}. The inner \texttt{Tilt\_Controller} subsystem, which realises Lecture~10 Method~2 (sign flip, post-integrator, outer PI, gyro-based Lead), is described in detail in Section~\ref{sec:balance}.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\linewidth]{images/regbot_simulink_model.png}
+    \caption{Top-level Simulink model (\texttt{regbot\_1mg.slx}) implementing the four-loop cascade. Left to right: position-loop gain $K_{ppos}$ (\texttt{Kppos\_gain}), Velocity PI $(\tau_{i,\mathrm{vel}} s + 1)/(\tau_{i,\mathrm{vel}} s)$, $K_{p,\mathrm{vel}}$ (\texttt{Kpvel\_gain}), the \texttt{Tilt\_Controller} subsystem (Task~\ref{sec:balance}), the wheel-velocity controller $K_{p,\mathrm{wv}}$ with integrator branch $1/\tau_{i,\mathrm{wv}}$ and optional feed-forward $K_{ff,\mathrm{wv}}$, the $\pm 9\,\mathrm{V}$ saturation limiter, and the \texttt{robot with balance} Simscape Multibody plant. Measured wheel velocity is filtered by \texttt{wheel\_vel\_filter} $= 1/(\tau_{wvlp}\,s + 1)$ and returned to both the Task~1 inner error sum and the Task~3 outer error sum; pitch, gyro, and $x_\mathrm{position}$ tap directly from the plant block. A separate \texttt{Disturbance} block (push force + transport delay) drives \texttt{desturb\_force} for the Task~2 push-rejection test.}
+    \label{fig:simulink_top_level}
+\end{figure}

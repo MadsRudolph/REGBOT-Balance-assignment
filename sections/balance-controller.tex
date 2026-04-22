@@ -102,6 +102,16 @@ Gathering the four blocks, the full controller from pitch measurement to $v_{\ma
       \underbrace{(\tau_d s + 1)}_{\text{Lead (gyro)}}.
 \end{equation}
 
+\paragraph{Simulink implementation.}
+The corresponding Simulink wiring of the \texttt{Tilt\_Controller} subsystem is shown in Figure~\ref{fig:simulink_tilt_controller}. The gyro signal is multiplied by \texttt{tdtilt}~$= \tau_d$ and added to pitch, producing the gyro-based ideal Lead $(\tau_d s + 1)\,\theta$ on the feedback path. That signal is subtracted from $\theta_\mathrm{ref}$ (port~3), passed through the sign-flip $-1$, the post-integrator $(\tau_{i,\mathrm{post}} s + 1)/(\tau_{i,\mathrm{post}} s)$, the outer PI $(\tau_i s + 1)/(\tau_i s)$, and scaled by $K_{ptilt}$ to produce the velocity reference at output port~1. Placing the Lead on the feedback path \emph{before} the error sum realises the multiplicative series $(\tau_d s + 1)\,C_{PI}\,C_{PI,\mathrm{post}}$; a parallel add after the PI blocks was tried first and did not produce the intended phase boost at $\omega_c$.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.9\linewidth]{images/regbot_simulink_tilt_controller.png}
+    \caption{Simulink block diagram of the \texttt{Tilt\_Controller} subsystem realising $C_\mathrm{total}(s)$. Inputs: pitch (port~1), gyro (port~2), $\theta_\mathrm{ref}$ (port~3). The gyro path's gain block holds $\tau_d = $ \texttt{tdtilt}; the post-integrator and outer PI are implemented as \texttt{Transfer Fcn} blocks parameterised by \texttt{tipost} and \texttt{titilt}; the final gain is \texttt{Kptilt}. Output port~1 delivers the velocity reference $v_\mathrm{ref}$ to the inner wheel-speed loop.}
+    \label{fig:simulink_tilt_controller}
+\end{figure}
+
 \paragraph{Step 4 — Closed-loop verification.}
 From \texttt{margin(L\_tilt)}: achieved $\omega_c = 15.00\,\mathrm{rad/s}$, $\gamma_M = 60.00^{\circ}$, $GM = -5.58\,\mathrm{dB}$. A negative gain margin is expected here: for plants with $P = 1$ the gain margin reported by \texttt{margin} is a \emph{lower} bound on $|K|$ rather than an upper bound. All closed-loop poles lie in the left half plane. A linear-model initial-condition test (impulse on pitch, closed pitch loop) settles in $1.34\,\mathrm{s}$, down from $1.55\,\mathrm{s}$ before the inner-loop redesign --- the outer balance loop regulates disturbances slightly faster when the inner loop is properly fast.
 
