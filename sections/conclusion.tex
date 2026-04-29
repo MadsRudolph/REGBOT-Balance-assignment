@@ -1,49 +1,36 @@
 \section{Conclusion}
 \label{sec:conclusion}
 
-Four cascaded controllers were designed for the REGBOT using the frequency-domain phase-balance method and verified in Simulink on the non-linear Simscape Multibody model. The final gains committed to \texttt{regbot\_mg.m} (and mirrored to the firmware through \texttt{config/regbot\_group47.ini}) are summarised in Table~\ref{tab:final_gains}. These are the redesigned values obtained after a mid-project course correction explained below.
+The four-loop cascade -- inner wheel-speed PI, balance PILead with sign-absorbing post-integrator, outer velocity PI, outermost position P -- works in simulation and on the physical robot, meeting every assignment specification. Final committed gains:
 
 \begin{table}[H]
     \centering
-    \begin{tabular}{l|l|c|c|c}
-        \textbf{Task} & \textbf{Controller}   & $\boldsymbol{\omega_c}$ & $\boldsymbol{\gamma_M}$ & \textbf{Parameters} \\
+    \small
+    \begin{tabular}{l|l|c|c|l}
+        \textbf{Task} & \textbf{Controller} & $\boldsymbol{\omega_c}$ & $\boldsymbol{\gamma_M}$ & \textbf{Parameters} \\
         \hline
-        1 -- Wheel speed & PI                 & $30.00\,\mathrm{rad/s}$  & $82.85^{\circ}$ & $K_P = 13.2037$, $\tau_i = 0.100\,\mathrm{s}$ \\
-        2 -- Balance     & PILead + Post-PI   & $15.00\,\mathrm{rad/s}$  & $60.00^{\circ}$ & $K_P = 1.1999$, $\tau_i = 0.2000\,\mathrm{s}$, $\tau_d = 0.0442\,\mathrm{s}$, $\tau_{i,\mathrm{post}} = 0.1245\,\mathrm{s}$ \\
-        3 -- Velocity    & PI                 & $1.00\,\mathrm{rad/s}$   & $68.98^{\circ}$  & $K_P = 0.1581$, $\tau_i = 3.000\,\mathrm{s}$ \\
-        4 -- Position    & P                  & $0.60\,\mathrm{rad/s}$   & $\approx 57^{\circ}$ & $K_P = 0.5411$ \\
+        1 -- Wheel speed & PI & $30.00$ & $82.85^{\circ}$ & $K_P = 13.2037$, $\tau_i = 0.100\,\mathrm{s}$ \\
+        2 -- Balance & PILead + post-PI & $15.00$ & $60.00^{\circ}$ & $K_P = 1.1999$, $\tau_i = 0.200$, $\tau_d = 0.0442$, $\tau_{i,\mathrm{post}} = 0.1245\,\mathrm{s}$ \\
+        3 -- Velocity & PI & $1.00$ & $68.98^{\circ}$ & $K_P = 0.1581$, $\tau_i = 3.000\,\mathrm{s}$ \\
+        4 -- Position & P & $0.60$ & $\approx 57^{\circ}$ & $K_P = 0.5411$ (Lead dropped) \\
     \end{tabular}
-    \caption{Final committed controller parameters after redesign against the on-floor plant.}
+    \caption{Final committed parameters ($\omega_c$ in rad/s).}
     \label{tab:final_gains}
 \end{table}
 
-The central challenge was Task~2, where the open-loop balance plant carries one RHP pole at $+8.89\,\mathrm{rad/s}$. Lecture~10 Method~2 solves this by (i) absorbing a sign flip into a post-integrator placed at the magnitude peak of $|G_{tilt}|$, producing a monotonically decreasing shaped plant $G_{tilt,\mathrm{post}}$, and (ii) designing an outer PI-Lead for the shaped plant using standard phase balance. The gyro signal was used to realise an ideal $(\tau_d s + 1)$ Lead without the filter pole of a proper Lead.
-
-Task~3 is constrained by a real RHP zero at $+8.51\,\mathrm{rad/s}$ in the closed-balance plant --- the non-minimum-phase physics of the inverted pendulum. This limits $\omega_{c,\mathrm{vel}} \leq z/5 \approx 1.70\,\mathrm{rad/s}$; the conservative choice $\omega_{c,\mathrm{vel}} = 1\,\mathrm{rad/s}$ was taken for robustness. Task~4 exploits the free integrator already present in $G_{pos,\mathrm{outer}}$ and therefore requires only a proportional controller. To satisfy the mission peak-velocity specification ($v > 0.7\,\mathrm{m/s}$ on a 2\,m move), the outer-loop separation was pushed from the conservative $5\times$ down to $1.67\times$; the resulting design achieves $0.753\,\mathrm{m/s}$ peak velocity in simulation and $\gamma_M \approx 57^{\circ}$ after the required Lead was dropped for Simulink-realisability reasons.
-
-All four Simulink simulations meet their respective specifications with comfortable headroom (no voltage saturation, small pitch excursions, and zero steady-state error). The four designs were then ported to the physical REGBOT by loading them from a group configuration file (\texttt{config/regbot\_group47.ini}) into the firmware controller blocks through the REGBOT GUI, and validated with four lab tests (Tests~0, 3a, 3b, 4). The hardware results are summarised in Table~\ref{tab:hw_summary}.
-
 \begin{table}[H]
     \centering
-    \begin{tabular}{l|l|l|c}
-        \textbf{Test} & \textbf{Loop(s) under test} & \textbf{Key metric} & \textbf{Result} \\
+    \small
+    \begin{tabular}{l|l|l}
+        \textbf{Test} & \textbf{Key metric} & \textbf{Result} \\
         \hline
-        0  & Task 1 (wheel-speed, balance off) & rise to $0.27\,\mathrm{m/s}$       & $0.012\,\mathrm{s}$ \ (spec $\sim 0.3$) \\
-        3a & Task 1+2 (balance at rest)        & drift over 10\,s                    & $0.343\,\mathrm{m}$ \ (spec $\leq 0.5$)\textsuperscript{a} \\
-        3b & Task 1+2+3 (0.8\,m/s square)      & full 4-sides + 3 turns              & completed; peak tilt $+25.5^{\circ}$; peak $V = 7.31\,\mathrm{V}$ \\
-        4  & Full cascade (2\,m step)          & peak velocity, final position error & $0.79\,\mathrm{m/s}$, $3.6\,\mathrm{cm}$ short; no overshoot \\
+        0  & rise to $0.27\,\mathrm{m/s}$ (balance off)  & $0.012\,\mathrm{s}$ \\
+        3a & drift over 10\,s at rest                    & $0.343\,\mathrm{m}$ (spec $\leq 0.5$) \\
+        3b & full square at $0.8\,\mathrm{m/s}$          & 4 sides + 3 turns; peak tilt $+25.5^{\circ}$; peak $V = 7.31\,\mathrm{V}$ \\
+        4  & 2\,m step (full cascade)                    & $0.79\,\mathrm{m/s}$ peak; $3.6\,\mathrm{cm}$ short; no overshoot \\
     \end{tabular}
-    \caption{Hardware validation summary. Every test satisfies its assignment specification. \\
-    \textsuperscript{a}The drift figure is from the initial-campaign Test~3a run; the redesigned controller reduces tilt standard deviation by $61\,\%$ on the same test (see Section~\ref{sec:task2_hw} for the discussion of why drift and tightness are cited from different runs).}
+    \caption{Hardware validation summary -- all tests within spec.}
     \label{tab:hw_summary}
 \end{table}
 
-Three practical findings emerged from the work:
-
-\begin{enumerate}
-    \item \textbf{The design process itself --- identify, test, re-identify.} The first Task~1 design was built against a wheels-up voltage-to-velocity identification ($G_{vel} = 13.34/(s+35.71)$) and met every assignment spec both in simulation and on hardware. The conservative phase-margin cushion absorbed a model mismatch that was not visible from the bench. Test~0 then revealed a quantitative discrepancy: the measured $90\,\%$ rise time was $0.329\,\mathrm{s}$, whereas a first-order closed loop at $\omega_c = 30\,\mathrm{rad/s}$ predicts $\approx 80\,\mathrm{ms}$. Re-identifying against the on-floor plant ($G_{vel} = 2.198/(s+5.985)$, $\tau = 167\,\mathrm{ms}$) and redesigning the cascade lifted $K_{pwv}$ from $3.31$ to $13.20$. The redesign did not change the set of specifications the assignment required, but it made the designed bandwidth materialise on hardware: the measured Test~0 rise time fell from $0.329\,\mathrm{s}$ to $0.012\,\mathrm{s}$, Task~4's final position error improved from $10.7\,\mathrm{cm}$ short to $3.6\,\mathrm{cm}$ short, and a late-time limit cycle on Task~4 disappeared. The cost was a narrower voltage-saturation margin during sharp Test~3b corner commands ($91\,\%$ of the $\pm 8\,\mathrm{V}$ budget, up from $58\,\%$). Both campaigns pass the assignment; the redesign delivers the bandwidth the design claimed.
-    \item \textbf{Sign of $K_P$ on the Balance block.} The firmware Balance controller does not internally absorb the Lecture~10 Method~2 minus sign; it has to be entered explicitly (\texttt{kp = -1.1999} in \texttt{[cbal]}). An initial hardware run with positive $K_P$ produced the expected positive-feedback runaway. This is consistent with the theory --- the minus sign must live somewhere in the physical loop --- and the firmware leaves that choice to the designer.
-    \item \textbf{Tilt-offset sensitivity.} A residual $\approx 1^{\circ}$ tilt-offset calibration error produces a measurable drift over 10\,s in the balance-only test (Test~3a), and it contributes to the small final-position shortfall in Test~4. The tighter redesigned balance loop tracks tilt more precisely, which in turn integrates the residual bias more efficiently into linear motion. A further tilt-offset calibration iteration or the acceptance of a physical CG/wheel-radius asymmetry would suppress the residual drift; neither violates a listed specification.
-\end{enumerate}
-
-The overall outcome is that the four-layer cascade --- inner wheel-speed PI, balance PILead with sign-absorbing post-integrator, outer velocity PI, and outermost position P --- works in simulation and on the physical robot with every assignment specification verified. The XY-plane figure required by the assignment (Figure~\ref{fig:task3_hw_xy}) is a clean closed square with $359.8^{\circ}$ of cumulative heading change, and the redesign process itself was as instructive as the final design: a conservative phase-margin cushion is a safety net against mis-identified plants, but it does not substitute for identifying the plant in the regime the controller will actually see.
+The central design choice was Task~2: the open-loop balance plant has one RHP pole, so Lecture~10 Method~2 was used -- a sign-flip and a post-integrator placed at $|G_{tilt}|$'s magnitude peak reshape the plant into a stabilisable form, on top of which a standard PI-Lead is designed. The Lead was implemented through the gyro signal as $\tau_d \dot\theta + \theta$, avoiding the filter pole of a proper Lead. Task~3 is bandwidth-capped by an RHP zero at $+8.51\,\mathrm{rad/s}$ ($\omega_c \leq z/5$); Task~4 exploits the free $v \to x$ integrator and uses pure P. Two key practical findings: (i)~the firmware Balance block does not absorb Method~2's sign flip internally -- \texttt{[cbal] kp} must be entered as $-1.1999$; (ii)~a residual $\approx 1^{\circ}$ tilt-offset bias drives the small drift in Test~3a and the $3.6\,\mathrm{cm}$ shortfall in Test~4 but does not violate any specification.

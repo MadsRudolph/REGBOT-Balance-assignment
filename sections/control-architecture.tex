@@ -1,30 +1,11 @@
 \section{Control Architecture}
 \label{sec:architecture}
 
-The REGBOT is controlled using a \textbf{cascaded} (nested) control structure. An outer loop generates the reference for the next inner loop, and the innermost loop commands the motor voltage. From inside out:
-
-\begin{enumerate}
-    \item \textbf{Wheel-speed loop} (Task~\ref{sec:wheel-speed}) --- a PI controller that converts a velocity reference into motor voltage, using the Day~5 voltage-to-velocity transfer function as its plant.
-    \item \textbf{Balance loop} (Task~\ref{sec:balance}) --- a PILead controller with a post-integrator that stabilises the inverted-pendulum dynamics. Its output is the velocity reference fed to the wheel-speed loop.
-    \item \textbf{Velocity loop} (Task~\ref{sec:velocity}) --- an outer loop that adjusts the balance reference to track a commanded forward speed.
-    \item \textbf{Position loop} (Task~\ref{sec:position}) --- the outermost loop that drives the robot to a target position by commanding the velocity reference.
-\end{enumerate}
-
-The plant for each outer controller is the \emph{closed-loop} response of the inner system, which we identify by linearising the Simulink model around the equilibrium with \texttt{linearize()}. In particular the balance plant is identified from the velocity reference to the tilt angle with the wheel-speed loop closed inside the model.
-
-Two plant transfer functions identified directly from the Simulink model are used throughout the report:
-\begin{itemize}
-    \item $G_{wv}(s)$: motor voltage to wheel velocity (full open-loop plant, including the unstable tilt dynamics).
-    \item $G_{tilt}(s)$: velocity reference to tilt angle (the plant seen by the balance controller, with the inner velocity loop closed).
-\end{itemize}
-
-Both identified plants contain exactly one right-half-plane (RHP) pole around $+8.7$--$+10.6\,\mathrm{rad/s}$, which is the inverted-pendulum falling mode. By the Nyquist stability criterion $Z = N + P$, a stable closed-loop requires one counter-clockwise encirclement of the critical point $-1$.
-
-The full top-level Simulink implementation of the cascade is shown in Figure~\ref{fig:simulink_top_level}. The inner \texttt{Tilt\_Controller} subsystem, which realises Lecture~10 Method~2 (sign flip, post-integrator, outer PI, gyro-based Lead), is described in detail in Section~\ref{sec:balance}.
+The cascade runs from outside in: position $\to$ velocity $\to$ tilt $\to$ wheel-velocity $\to$ motor voltage. Each outer loop's plant is the closed-loop response of the inner system, identified by linearising \texttt{regbot\_1mg.slx} around equilibrium with \texttt{linearize()}. Two raw plants drive the design: $G_{wv}(s)$ (motor voltage $\to$ wheel velocity) and $G_{tilt}(s)$ (velocity reference $\to$ tilt angle, with the wheel-speed loop closed). $G_{tilt}$ has one RHP pole at $\approx +8.9\,\mathrm{rad/s}$ -- the falling mode -- so the Nyquist criterion $Z = N + P$ requires one CCW encirclement of $(-1,0)$ for closed-loop stability.
 
 \begin{figure}[H]
     \centering
     \includegraphics[width=\linewidth]{images/regbot_simulink_model.png}
-    \caption{Top-level Simulink model (\texttt{regbot\_1mg.slx}) implementing the four-loop cascade. Left to right: position-loop gain $K_{ppos}$ (\texttt{Kppos\_gain}), Velocity PI $(\tau_{i,\mathrm{vel}} s + 1)/(\tau_{i,\mathrm{vel}} s)$, $K_{p,\mathrm{vel}}$ (\texttt{Kpvel\_gain}), the \texttt{Tilt\_Controller} subsystem (Task~\ref{sec:balance}), the wheel-velocity controller $K_{p,\mathrm{wv}}$ with integrator branch $1/\tau_{i,\mathrm{wv}}$ and optional feed-forward $K_{ff,\mathrm{wv}}$, the $\pm 9\,\mathrm{V}$ saturation limiter, and the \texttt{robot with balance} Simscape Multibody plant. Measured wheel velocity is filtered by \texttt{wheel\_vel\_filter} $= 1/(\tau_{wvlp}\,s + 1)$ and returned to both the Task~1 inner error sum and the Task~3 outer error sum; pitch, gyro, and $x_\mathrm{position}$ tap directly from the plant block. A separate \texttt{Disturbance} block (push force + transport delay) drives \texttt{desturb\_force} for the Task~2 push-rejection test.}
+    \caption{Top-level Simulink model. Left to right: position gain $K_{ppos}$, velocity PI $K_{p,\mathrm{vel}} \cdot (\tau_{i,\mathrm{vel}} s + 1)/(\tau_{i,\mathrm{vel}} s)$, the \texttt{Tilt\_Controller} subsystem (Section~\ref{sec:balance}), the wheel-velocity PI with feed-forward, the $\pm 9\,\mathrm{V}$ limiter, and the \texttt{robot with balance} Simscape Multibody plant.}
     \label{fig:simulink_top_level}
 \end{figure}
