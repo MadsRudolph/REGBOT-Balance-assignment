@@ -39,7 +39,7 @@ here, and each appendix subsection notes which body figure it expands.
 \begin{figure}[H]
     \centering
     \includegraphics[width=0.8\linewidth]{images/test0_wheel_speed_v3_onfloor_2026-04-22.png}
-    \caption{Task~1: Hardware step (Test~0). Mission \texttt{bal=0, vel=0.3, log=15 : time=3}. Rise to $0.27\,\mathrm{m/s}$ in $0.012\,\mathrm{s}$.}
+    \caption{Task~1: Hardware step (Test~0). Mission \texttt{bal=0, vel=0.3, log=15 : time=3}. Rise to $0.27\,\mathrm{m/s}$ in $0.087\,\mathrm{s}$.}
     \label{fig:app-task1-hw}
 \end{figure}
 
@@ -74,8 +74,8 @@ here, and each appendix subsection notes which body figure it expands.
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.8\linewidth]{images/regbot_task2_step.png}
-    \caption{Task~2: Closed-loop step (Simulink) -- reference tracking.}
+    \includegraphics[width=0.8\linewidth]{images/regbot_task2_sim_recovery_10deg_v3.png}
+    \caption{Task~2: Simulink full-cascade recovery from a $10^{\circ}$ tilt push. Traces: limited motor voltage (yellow, $\pm 9\,\mathrm{V}$), $x$ position (blue), pitch (red), measured wheel velocity (green). Pitch returns to zero within $\sim 2\,\mathrm{s}$; the linear-model IC release through $S = 1/(1+L)$ predicts $1.34\,\mathrm{s}$ 2\,\%-settle and $\sim 6.6^{\circ}$ peak undershoot.}
     \label{fig:app-task2-sim}
 \end{figure}
 
@@ -118,7 +118,7 @@ here, and each appendix subsection notes which body figure it expands.
 \begin{figure}[H]
     \centering
     \includegraphics[width=0.7\linewidth]{images/test3b_xy_v3_onfloor_2026-04-22.png}
-    \caption{Test~3b XY trajectory at $0.8\,\mathrm{m/s}$ ($1\,\mathrm{m}$ sides, $0.2\,\mathrm{m}$ corner radius). Cumulative heading $359.8^{\circ}$ after four laps.}
+    \caption{Test~3b XY trajectory at $0.8\,\mathrm{m/s}$ ($1\,\mathrm{m}$ sides, $0.2\,\mathrm{m}$ corner radius). Cumulative heading $359.8^{\circ}$ after one square lap (four $90^{\circ}$ turns).}
     \label{fig:app-task3-xy}
 \end{figure}
 
@@ -129,7 +129,7 @@ here, and each appendix subsection notes which body figure it expands.
 \begin{figure}[H]
     \centering
     \includegraphics[width=0.8\linewidth]{images/regbot_task4_loop_bode.png}
-    \caption{Task~4: Open-loop $L_{\mathrm{pos}}$ Bode (Simulink). $\omega_c = 0.60\,\mathrm{rad/s}$, $\gamma_M \approx 57^{\circ}$ (after Lead drop), $GM = 25.17\,\mathrm{dB}$.}
+    \caption{Task~4: Open-loop $L_{\mathrm{pos}}$ Bode (Simulink, firmware controller with Lead dropped). $\omega_c = 0.60\,\mathrm{rad/s}$, $\gamma_M = 57.18^{\circ}$, $GM = 26.20\,\mathrm{dB}$.}
     \label{fig:app-task4-bode}
 \end{figure}
 

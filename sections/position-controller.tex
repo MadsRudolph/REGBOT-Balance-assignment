@@ -15,12 +15,12 @@
         \hline
         $0.2$ & $87^{\circ}$ & $38\,\mathrm{dB}$ & $0.33\,\mathrm{m/s}$ & $20\,\mathrm{s}$ & Fails velocity \& settle \\
         $0.5$ & $66^{\circ}$ & $25\,\mathrm{dB}$ & $0.68\,\mathrm{m/s}$ & $12\,\mathrm{s}$ & Just below $0.7$ \\
-        $\mathbf{0.6}$ & $\mathbf{60^{\circ}}$ & $\mathbf{25\,\mathrm{dB}}$ & $\mathbf{0.80\,\mathrm{m/s}}$ & $\mathbf{11\,\mathrm{s}}$ & \textbf{Chosen} \\
+        $\mathbf{0.6}$ & $\mathbf{60^{\circ}}^{*}$ & $\mathbf{25\,\mathrm{dB}}^{*}$ & $\mathbf{0.80\,\mathrm{m/s}}^{*}$ & $\mathbf{11\,\mathrm{s}}$ & \textbf{Chosen} \\
     \end{tabular}
-    \caption{$\omega_c$ iteration. The $11\,\mathrm{s}$ 2\,\%-envelope settle is pessimistic; the mission only requires \emph{reaching} 2\,m within $10\,\mathrm{s}$.}
+    \caption{$\omega_c$ iteration with the design controller (Lead in place). The $11\,\mathrm{s}$ 2\,\%-envelope settle is pessimistic; the mission only requires \emph{reaching} 2\,m within $10\,\mathrm{s}$. \emph{*Starred values are the design-controller numbers; the as-built firmware controller drops the Lead, giving $\gamma_M = 57.18^{\circ}$, $GM = 26.20\,\mathrm{dB}$, peak $v = 0.772\,\mathrm{m/s}$ (see body and Fig.~\ref{fig:task4-verify}).}}
 \end{table}
 
-\paragraph{Design at $\omega_c = 0.6\,\mathrm{rad/s}$.} $\angle G_{pos,\mathrm{outer}}(j0.6) = -122.9^{\circ}$, required Lead $+2.85^{\circ}$. The ideal $(\tau_d s + 1)$ is improper (Simulink rejects it); the proper alternative adds a filter pole that costs $\sim 3^{\circ}$ back. Since the required Lead is only $\approx 3^{\circ}$, we drop it: $\tau_d = 0$, $K_P = \mathbf{0.5411}$. \texttt{margin(L\_pos)}: $\omega_c = 0.60$, $\gamma_M \approx 57^{\circ}$, $GM = 25.17\,\mathrm{dB}$. Linear 2\,m step: peak $v = 0.753\,\mathrm{m/s}$ ($\geq 0.7$ \checkmark).
+\paragraph{Design at $\omega_c = 0.6\,\mathrm{rad/s}$.} $\angle G_{pos,\mathrm{outer}}(j0.6) = -122.9^{\circ}$, required Lead $+2.85^{\circ}$. The ideal $(\tau_d s + 1)$ is improper (Simulink rejects it); the proper alternative adds a filter pole that costs $\sim 3^{\circ}$ back. Since the required Lead is only $\approx 3^{\circ}$, we drop it: $\tau_d = 0$, $K_P = \mathbf{0.5411}$. \texttt{margin(L\_pos)}: $\omega_c = 0.60$, $\gamma_M = 57.18^{\circ}$, $GM = 26.20\,\mathrm{dB}$. Linear 2\,m step: peak $v = 0.772\,\mathrm{m/s}$ ($\geq 0.7$ \checkmark).
 
 \begin{figure}[H]
     \centering
@@ -40,4 +40,4 @@
     \label{fig:task4-verify}
 \end{figure}
 
-\paragraph{Hardware (Test~4).} Mission \texttt{vel=0, bal=1, log=15 : time=2 ; topos=2, vel=1.2 : time=10}. Final $\mathbf{1.964\,m}$ ($3.6\,\mathrm{cm}$ short), no overshoot. Peak $v\!=\!0.79\,\mathrm{m/s}$ ($\geq 0.7$ \checkmark), peak tilt $+17.3^{\circ}$, $V_{\max}\!=\!4.95\,\mathrm{V}$. The linear $0.75\,\mathrm{m/s}$ peak-$v$ prediction matches hardware.
+\paragraph{Hardware (Test~4).} Mission \texttt{vel=0, bal=1, log=15 : time=2 ; topos=2, vel=1.2 : time=10}. Final $\mathbf{1.964\,m}$ ($3.6\,\mathrm{cm}$ short), no overshoot. Peak $v\!=\!0.79\,\mathrm{m/s}$ ($\geq 0.7$ \checkmark), peak tilt $+17.3^{\circ}$, $V_{\max}\!=\!4.95\,\mathrm{V}$. The linear $0.77\,\mathrm{m/s}$ peak-$v$ prediction matches hardware.

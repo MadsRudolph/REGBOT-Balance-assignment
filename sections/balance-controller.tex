@@ -61,15 +61,15 @@ The Simulink \texttt{Tilt\_Controller} subsystem implements this stack in series
         \caption{Open-loop $L_{\mathrm{tilt}}$ with margins.}
     \end{subfigure}\hfill
     \begin{subfigure}[t]{0.32\linewidth}
-        \includegraphics[width=\linewidth]{images/regbot_task2_step.png}
-        \caption{Closed-loop step (Simulink).}
+        \includegraphics[width=\linewidth]{images/regbot_task2_sim_recovery_10deg_v3.png}
+        \caption{Simulink IC recovery from $\theta_0 = 10^{\circ}$.}
     \end{subfigure}\hfill
     \begin{subfigure}[t]{0.32\linewidth}
         \includegraphics[width=\linewidth]{images/test3a_balance_rest_v3_onfloor_2026-04-22.png}
         \caption{Hardware balance hold (Test~3a).}
     \end{subfigure}
-    \caption{Task~2 verification: open-loop Bode of $L_{\mathrm{tilt}}$, Simulink closed-loop step, hardware Test~3a (release from upright, $10\,\mathrm{s}$). \textit{Full-size in App.~\ref{app:task2-verify}.}}
+    \caption{Task~2 verification: open-loop Bode of $L_{\mathrm{tilt}}$, Simulink full-cascade IC recovery from $10^{\circ}$ tilt push, hardware Test~3a (release from upright, $10\,\mathrm{s}$). Linear-model IC release predicts $1.34\,\mathrm{s}$ settle / $6.6^{\circ}$ peak undershoot. \textit{Full-size in App.~\ref{app:task2-verify}.}}
     \label{fig:task2-verify}
 \end{figure}
 
-\paragraph{Hardware (Test~3a).} \texttt{vel=0, bal=1, log=15 : time=10}: robot held upright, balance enabled, released. Held the full $10\,\mathrm{s}$, drift $\mathbf{0.343\,m}$ (spec $\leq 0.5$ \checkmark); the $1.34\,\mathrm{s}$ linear-IC settling prediction matches hardware. \emph{Firmware:} \texttt{[cbal] kp} must be entered as $\mathbf{-1.1999}$ -- the firmware does not absorb Method~2's sign internally (positive $K_P$ caused a runaway in the first campaign).
+\paragraph{Hardware (Test~3a).} \texttt{vel=0, bal=1, log=15 : time=10}: robot held upright, balance enabled, released. Held the full $10\,\mathrm{s}$, drift $\mathbf{0.343\,m}$ (spec $\leq 0.5$ \checkmark), confirming the closed loop is stable on the physical plant. \emph{Firmware:} \texttt{[cbal] kp} must be entered as $\mathbf{-1.1999}$ -- the firmware does not absorb Method~2's sign internally (positive $K_P$ caused a runaway in the first campaign).
