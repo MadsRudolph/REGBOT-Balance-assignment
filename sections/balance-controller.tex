@@ -25,7 +25,7 @@
         \includegraphics[width=\linewidth]{images/regbot_task2_nyquist_post.png}
         \caption{Nyquist of $G_{tilt,\mathrm{post}}$: one CCW encirclement of $(-1,0)$.}
     \end{subfigure}
-    \caption{Method~2 pre-treatment: post-integrator + sign flip stabilises the shape.}
+    \caption{Method~2 pre-treatment: post-integrator + sign flip stabilises the shape. \textit{Full-size in App.~\ref{app:task2-method2}.}}
     \label{fig:task2_method2}
 \end{figure}
 
@@ -68,7 +68,8 @@ The Simulink \texttt{Tilt\_Controller} subsystem implements this stack in series
         \includegraphics[width=\linewidth]{images/test3a_balance_rest_v3_onfloor_2026-04-22.png}
         \caption{Hardware balance hold (Test~3a).}
     \end{subfigure}
-    \caption{Task~2 verification: open-loop Bode of $L_{\mathrm{tilt}}$, Simulink closed-loop step, hardware Test~3a (release from upright, $10\,\mathrm{s}$).}
+    \caption{Task~2 verification: open-loop Bode of $L_{\mathrm{tilt}}$, Simulink closed-loop step, hardware Test~3a (release from upright, $10\,\mathrm{s}$). \textit{Full-size in App.~\ref{app:task2-verify}.}}
+    \label{fig:task2-verify}
 \end{figure}
 
 \paragraph{Hardware (Test~3a).} \texttt{vel=0, bal=1, log=15 : time=10}: robot held upright, balance enabled, released. Held the full $10\,\mathrm{s}$, drift $\mathbf{0.343\,m}$ (spec $\leq 0.5$ \checkmark); the $1.34\,\mathrm{s}$ linear-IC settling prediction matches hardware. \emph{Firmware:} \texttt{[cbal] kp} must be entered as $\mathbf{-1.1999}$ -- the firmware does not absorb Method~2's sign internally (positive $K_P$ caused a runaway in the first campaign).
