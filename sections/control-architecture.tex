@@ -6,6 +6,6 @@ The cascade runs from outside in: position $\to$ velocity $\to$ tilt $\to$ wheel
 \begin{figure}[H]
     \centering
     \includegraphics[width=\linewidth]{images/regbot_simulink_model.png}
-    \caption{Top-level Simulink model. Left to right: position gain $K_{ppos}$, velocity PI $K_{p,\mathrm{vel}} \cdot (\tau_{i,\mathrm{vel}} s + 1)/(\tau_{i,\mathrm{vel}} s)$, the \texttt{Tilt\_Controller} subsystem (Section~\ref{sec:balance}), the wheel-velocity PI with feed-forward, the $\pm 9\,\mathrm{V}$ limiter, and the \texttt{robot with balance} Simscape Multibody plant.}
+    \caption{Top-level Simulink model. Left to right: position gain $K_{p,pos}$, velocity PI $K_{p,\mathrm{vel}} \cdot \frac{\tau_{i,\mathrm{vel}} s + 1}{\tau_{i,\mathrm{vel}} s} $, the \texttt{Tilt\_Controller} subsystem (Section~\ref{sec:balance}), the wheel-velocity PI with feed-forward, the $\pm 9\,\mathrm{V}$ limiter, and the \texttt{robot with balance} Simscape Multibody plant.}
     \label{fig:simulink_top_level}
 \end{figure}
