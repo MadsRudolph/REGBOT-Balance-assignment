@@ -1,52 +1,74 @@
 \section{Balance Controller (Task 2)}
 \label{sec:balance}
 
-\paragraph{Plant.} With Task~1 closed, linearising \texttt{vel\_ref} $\to$ tilt gives a 7th-order $G_{tilt}(s)$ with one RHP pole at $\approx +8.9\,\mathrm{rad/s}$ (the inverted-pendulum falling mode). Plain PI-Lead cannot stabilise this -- Nyquist would not encircle $(-1,0)$ in the right direction. We follow Lecture~10 Method~2.
+\paragraph{What's special.} The plant is open-loop \emph{unstable} (one RHP pole = the inverted-pendulum falling mode). A standard PI-Lead cannot stabilise it -- no positive gain makes the Nyquist plot of $G_{tilt}$ encircle $(-1,0)$ counter-clockwise. We use Lecture~10 \emph{Method~2}: a sign flip and a ``post-integrator'' reshape the plant into a stabilisable form, then the usual PI-Lead recipe runs on top.
 
-\paragraph{Step 1 -- Sign of $K_{PS}$.} $G_{tilt}$ has DC gain $> 0$ and $P = 1$. The criterion $Z = N + P$ with $Z = 0$ requires $N = -1$ (one CCW encirclement); positive $K_{PS}$ cannot produce this, so $\mathrm{sign}(K_{PS}) = -1$, absorbed into the post-integrator below.
+\paragraph{Plant.} Linearising \texttt{vel\_ref} $\to$ tilt with Task~1 closed gives a 7th-order $G_{tilt}(s)$ with one RHP pole at $\approx +8.9\,\mathrm{rad/s}$ and one RHP zero (the non-minimum-phase ``wheels-roll-backward-first'' signature). With $Z = 0$ and $P = 1$ the Nyquist criterion demands $N = -1$ (exactly one CCW encirclement).
 
-\paragraph{Step 2 -- Post-integrator at the magnitude peak.} Place the PI zero at $\omega_\mathrm{peak}$ where $|G_{tilt}|$ peaks ($\omega_\mathrm{peak} = 8.03\,\mathrm{rad/s}$):
-\begin{equation}
-    \tau_{i,\mathrm{post}} = 1/\omega_\mathrm{peak} = 0.1245\,\mathrm{s}, \quad
-    G_{tilt,\mathrm{post}}(s) = -\,C_{PI,\mathrm{post}}(s)\,G_{tilt}(s).
-\end{equation}
+\paragraph{Method~2 -- pre-treatment.}
+\begin{enumerate}[leftmargin=*,nosep,label=\textbf{M\arabic*.}]
+    \item \textbf{Sign of $K_{PS}$.} $G_{tilt}$ has DC gain $> 0$, and positive gain only scales the Nyquist plot radially -- it cannot rotate the curve to the left of $(-1,0)$. So $\text{sign}(K_{PS}) = -1$; the minus sign is absorbed into the post-integrator below.
+    \item \textbf{Post-integrator at $|G_{tilt}|$'s peak.} The plant's magnitude rises into a resonance peak at $\omega_{\mathrm{peak}} = 8.03\,\mathrm{rad/s}$. Place the PI zero there: $\tau_{i,\mathrm{post}} = 1/\omega_{\mathrm{peak}} = 0.1245\,\mathrm{s}$. The reshaped plant
+    \[
+        G_{tilt,\mathrm{post}}(s) = -\,C_{PI,\mathrm{post}}(s)\,G_{tilt}(s)
+    \]
+    has \emph{monotonically decreasing} magnitude and a Nyquist that makes exactly one CCW encirclement of $(-1,0)$ -- the visual proof that Method~2 worked.
+\end{enumerate}
 
 \begin{figure}[H]
     \centering
-    \begin{subfigure}[t]{0.48\linewidth}
+    \begin{subfigure}[t]{0.40\linewidth}
         \includegraphics[width=\linewidth]{images/regbot_task2_bode_post.png}
-        \caption{Bode: $G_{tilt}$ vs $G_{tilt,\mathrm{post}}$ -- monotonically decreasing.}
-    \end{subfigure}
-    \hfill
-    \begin{subfigure}[t]{0.48\linewidth}
+        \caption{Bode: $G_{tilt}$ vs $G_{tilt,\mathrm{post}}$ -- magnitude now monotonic.}
+    \end{subfigure}\hfill
+    \begin{subfigure}[t]{0.40\linewidth}
         \includegraphics[width=\linewidth]{images/regbot_task2_nyquist_post.png}
         \caption{Nyquist of $G_{tilt,\mathrm{post}}$: one CCW encirclement of $(-1,0)$.}
     \end{subfigure}
-    \caption{Method~2 Step~2: post-integrator stabilises the shape.}
+    \caption{Method~2 pre-treatment: post-integrator + sign flip stabilises the shape.}
+    \label{fig:task2_method2}
 \end{figure}
 
-\paragraph{Step 3 -- Outer PI-Lead.} Specs $\omega_c = 15\,\mathrm{rad/s}$, $\gamma_M = 60^{\circ}$, $N_i = 3$. PI zero at $\tau_i = 0.200\,\mathrm{s}$. Phase balance at $\omega_c$: $\angle G_{tilt,\mathrm{post}}(j15) = -135.1^{\circ}$, $\phi_{PI} = -18.4^{\circ}$, required $\phi_\mathrm{Lead} = +33.5^{\circ}$. The Lead is realised through the gyro ($\dot\theta = s\theta$ measured directly), giving the ideal form $(\tau_d s + 1)\theta = \tau_d \cdot \mathrm{gyro} + \theta$ with $\tau_d = \tan(33.5^{\circ})/15 = 0.0442\,\mathrm{s}$ -- no filter pole needed. From $|L(j\omega_c)| = 1$: $K_P = 1/0.833 = 1.1999$.
-\begin{equation}
-    C_\mathrm{tilt}(s) = -1.1999 \cdot \frac{0.1245 s + 1}{0.1245 s} \cdot \frac{0.2 s + 1}{0.2 s} \cdot (0.0442 s + 1).
-\end{equation}
+\paragraph{Standard recipe on $G_{tilt,\mathrm{post}}$.} Apply R2--R5 from §\ref{sec:architecture}.
+
+\begin{center}\small
+\begin{tabular}{rl}
+$\omega_c,\ \gamma_M,\ N_i$ & $15\,\mathrm{rad/s},\ 60^{\circ},\ 3$ \\
+PI zero: $\tau_i$ & $0.200\,\mathrm{s}$ \\
+$\angle G_{tilt,\mathrm{post}}(j15)$ & $-135.1^{\circ}$ \\
+$\phi_{PI}$ & $-18.4^{\circ}$ \\
+Required $\phi_{\mathrm{Lead}} = -180^{\circ} + \gamma_M - \angle G - \phi_{PI}$ & $+33.5^{\circ}$ -- Lead \emph{is} needed \\
+$\tau_d = \tan(33.5^{\circ}) / 15$ & $0.0442\,\mathrm{s}$ \\
+$|L|_{\mathrm{unscaled}}$ at $\omega_c$ & $0.833$ \\
+$K_P$ & $\mathbf{1.1999}$ \\
+\end{tabular}
+\end{center}
+
+\noindent The Lead is realised through the gyro signal -- which directly measures $\dot{\theta} = s\theta$ -- as $\tau_d \cdot \mathrm{gyro} + \theta$. This is the \emph{ideal} Lead $(\tau_d s + 1)$ without the filter pole $1/(\alpha \tau_d s + 1)$: the noise issue an ordinary Lead protects against is gone because the differentiation is measured, not numerical.
+
+\[
+C_{\mathrm{tilt}}(s) = -1.1999 \cdot \frac{0.1245s + 1}{0.1245s} \cdot \frac{0.2s + 1}{0.2s} \cdot (0.0442s + 1).
+\]
+
+The Simulink \texttt{Tilt\_Controller} subsystem implements this stack in series, with $\tau_d \cdot \mathrm{gyro}$ summed onto $\mathrm{pitch}$ on the measurement side so the Lead has no derivative kick on $\theta_{\mathrm{ref}}$.
+
+\paragraph{Verify (R6).} \texttt{margin(L\_tilt)}: $\omega_c = 15.00$, $\gamma_M = 60.00^{\circ}$, $GM = -5.58\,\mathrm{dB}$ (negative GM is the \emph{lower} bound on $|K|$ for unstable plants), $0$ RHP closed-loop poles. Linear IC release from $\theta_0 = 10^{\circ}$ settles in $\mathbf{1.34\,s}$ with $\sim 6.6^{\circ}$ undershoot (RHP-zero signature).
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.85\linewidth]{images/regbot_simulink_tilt_controller.png}
-    \caption{\texttt{Tilt\_Controller} subsystem: gyro $\times$ \texttt{tdtilt} added to pitch (gyro-based ideal Lead), then sign-flip $-1$, post-integrator, outer PI, gain $K_{ptilt}$ $\to$ $v_\mathrm{ref}$.}
-    \label{fig:tilt_controller}
+    \begin{subfigure}[t]{0.32\linewidth}
+        \includegraphics[width=\linewidth]{images/regbot_task2_loop_bode.png}
+        \caption{Open-loop $L_{\mathrm{tilt}}$ with margins.}
+    \end{subfigure}\hfill
+    \begin{subfigure}[t]{0.32\linewidth}
+        \includegraphics[width=\linewidth]{images/regbot_task2_step.png}
+        \caption{Closed-loop step (Simulink).}
+    \end{subfigure}\hfill
+    \begin{subfigure}[t]{0.32\linewidth}
+        \includegraphics[width=\linewidth]{images/test3a_balance_rest_v3_onfloor_2026-04-22.png}
+        \caption{Hardware balance hold (Test~3a).}
+    \end{subfigure}
+    \caption{Task~2 verification: open-loop Bode of $L_{\mathrm{tilt}}$, Simulink closed-loop step, hardware Test~3a (release from upright, $10\,\mathrm{s}$).}
 \end{figure}
 
-\paragraph{Step 4 -- Verify.} \texttt{margin(L\_tilt)}: $\omega_c = 15.00$, $\gamma_M = 60.00^{\circ}$, $GM = -5.58\,\mathrm{dB}$, 0 RHP closed-loop poles. Negative GM is the expected \emph{lower} bound on $|K|$ for unstable plants ($P = 1$). Linear IC ($\theta_0 = 10^{\circ}$) settles in $1.34\,\mathrm{s}$ with $\sim 6.6^{\circ}$ undershoot (RHP-zero signature). Simulink non-linear sim: $10^{\circ}$ recovery in $\sim 0.3\,\mathrm{s}$, peak motor voltage $2.8\,\mathrm{V}$.
-
-\begin{table}[H]
-    \centering
-    \begin{tabular}{l|c|c|c|c|c|c}
-        $\omega_c$ & $\gamma_M$ & $N_i$ & $\tau_{i,\mathrm{post}}$ & $\tau_i$ & $\tau_d$ & $K_P$ \\
-        \hline
-        $15$ & $60^{\circ}$ & $3$ & $0.1245$ & $0.2000$ & $0.0442$ & $1.1999$ \\
-    \end{tabular}
-    \caption{Task~2 final parameters (s for time constants, rad/s for $\omega_c$).}
-\end{table}
-
-\paragraph{Hardware (Test~3a).} Mission: \texttt{vel=0, bal=1, log=15 : time=10}. Robot held upright at the balance point, mission started, robot released. Balance held the full 10\,s, drift $0.343\,\mathrm{m}$ (spec $\leq 0.5$ \checkmark). Hardware matches the linear-IC settling prediction of $1.34\,\mathrm{s}$. \textbf{Firmware sign:} \texttt{[cbal] kp = -1.1999} -- the firmware does not absorb the Method~2 sign flip; positive $K_P$ produced a positive-feedback runaway in the first campaign.
+\paragraph{Hardware (Test~3a).} \texttt{vel=0, bal=1, log=15 : time=10}: robot held upright, balance enabled, released. Held the full $10\,\mathrm{s}$, drift $\mathbf{0.343\,m}$ (spec $\leq 0.5$ \checkmark); the $1.34\,\mathrm{s}$ linear-IC settling prediction matches hardware. \emph{Firmware:} \texttt{[cbal] kp} must be entered as $\mathbf{-1.1999}$ -- the firmware does not absorb Method~2's sign internally (positive $K_P$ caused a runaway in the first campaign).

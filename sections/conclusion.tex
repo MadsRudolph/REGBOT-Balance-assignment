@@ -1,36 +1,26 @@
 \section{Conclusion}
 \label{sec:conclusion}
+\enlargethispage{3\baselineskip}
 
-The four-loop cascade -- inner wheel-speed PI, balance PILead with sign-absorbing post-integrator, outer velocity PI, outermost position P -- works in simulation and on the physical robot, meeting every assignment specification. Final committed gains:
+The four-loop cascade meets every assignment specification, in simulation and on hardware. Final committed parameters:
 
 \begin{table}[H]
-    \centering
-    \small
+    \centering\small
     \begin{tabular}{l|l|c|c|l}
         \textbf{Task} & \textbf{Controller} & $\boldsymbol{\omega_c}$ & $\boldsymbol{\gamma_M}$ & \textbf{Parameters} \\
         \hline
-        1 -- Wheel speed & PI & $30.00$ & $82.85^{\circ}$ & $K_P = 13.2037$, $\tau_i = 0.100\,\mathrm{s}$ \\
-        2 -- Balance & PILead + post-PI & $15.00$ & $60.00^{\circ}$ & $K_P = 1.1999$, $\tau_i = 0.200$, $\tau_d = 0.0442$, $\tau_{i,\mathrm{post}} = 0.1245\,\mathrm{s}$ \\
-        3 -- Velocity & PI & $1.00$ & $68.98^{\circ}$ & $K_P = 0.1581$, $\tau_i = 3.000\,\mathrm{s}$ \\
+        1 -- Wheel speed & PI & $30.00$ & $82.85^{\circ}$ & $K_P = 13.2037,\ \tau_i = 0.100\,\mathrm{s}$ \\
+        2 -- Balance & PILead + post-PI & $15.00$ & $60.00^{\circ}$ & $K_P = 1.1999,\ \tau_i = 0.200,\ \tau_d = 0.0442,\ \tau_{i,\mathrm{post}} = 0.1245\,\mathrm{s}$ \\
+        3 -- Velocity & PI & $1.00$ & $68.98^{\circ}$ & $K_P = 0.1581,\ \tau_i = 3.000\,\mathrm{s}$ \\
         4 -- Position & P & $0.60$ & $\approx 57^{\circ}$ & $K_P = 0.5411$ (Lead dropped) \\
     \end{tabular}
-    \caption{Final committed parameters ($\omega_c$ in rad/s).}
+    \caption{Committed gains ($\omega_c$ in rad/s).}
     \label{tab:final_gains}
 \end{table}
 
-\begin{table}[H]
-    \centering
-    \small
-    \begin{tabular}{l|l|l}
-        \textbf{Test} & \textbf{Key metric} & \textbf{Result} \\
-        \hline
-        0  & rise to $0.27\,\mathrm{m/s}$ (balance off)  & $0.012\,\mathrm{s}$ \\
-        3a & drift over 10\,s at rest                    & $0.343\,\mathrm{m}$ (spec $\leq 0.5$) \\
-        3b & full square at $0.8\,\mathrm{m/s}$          & 4 sides + 3 turns; peak tilt $+25.5^{\circ}$; peak $V = 7.31\,\mathrm{V}$ \\
-        4  & 2\,m step (full cascade)                    & $0.79\,\mathrm{m/s}$ peak; $3.6\,\mathrm{cm}$ short; no overshoot \\
-    \end{tabular}
-    \caption{Hardware validation summary -- all tests within spec.}
-    \label{tab:hw_summary}
-\end{table}
-
-The central design choice was Task~2: the open-loop balance plant has one RHP pole, so Lecture~10 Method~2 was used -- a sign-flip and a post-integrator placed at $|G_{tilt}|$'s magnitude peak reshape the plant into a stabilisable form, on top of which a standard PI-Lead is designed. The Lead was implemented through the gyro signal as $\tau_d \dot\theta + \theta$, avoiding the filter pole of a proper Lead. Task~3 is bandwidth-capped by an RHP zero at $+8.51\,\mathrm{rad/s}$ ($\omega_c \leq z/5$); Task~4 exploits the free $v \to x$ integrator and uses pure P. Two key practical findings: (i)~the firmware Balance block does not absorb Method~2's sign flip internally -- \texttt{[cbal] kp} must be entered as $-1.1999$; (ii)~a residual $\approx 1^{\circ}$ tilt-offset bias drives the small drift in Test~3a and the $3.6\,\mathrm{cm}$ shortfall in Test~4 but does not violate any specification.
+\paragraph{Key findings.}
+\begin{itemize}[leftmargin=*,nosep]
+    \item \textbf{Task~2 (Method~2)} is the structural heart: sign flip $+$ post-integrator at $|G_{tilt}|$'s peak reshape the unstable plant, then a standard PI-Lead runs on top. The Lead uses the gyro directly ($\tau_d \dot{\theta} + \theta$), so no filter pole. \textbf{Firmware:} \texttt{[cbal] kp} must be $\mathbf{-1.1999}$; positive caused a runaway in the first campaign.
+    \item \textbf{Task~3} is bandwidth-capped by the RHP zero at $+8.51\,\mathrm{rad/s}$ ($\omega_c \leq z/5$); pushing closer would produce ugly inverse-response transients.
+    \item \textbf{Task~4} exploits the free $v\!\to\!x$ integrator: Type-1 plant $+$ pure P gives zero step error; $\omega_c$ was iterated against the mission spec rather than derived from cascade rules.
+\end{itemize}

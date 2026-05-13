@@ -1,11 +1,26 @@
 \section{Control Architecture}
 \label{sec:architecture}
 
-The cascade runs from outside in: position $\to$ velocity $\to$ tilt $\to$ wheel-velocity $\to$ motor voltage. Each outer loop's plant is the closed-loop response of the inner system, identified by linearising \texttt{regbot\_1mg.slx} around equilibrium with \texttt{linearize()}. Two raw plants drive the design: $G_{wv}(s)$ (motor voltage $\to$ wheel velocity) and $G_{tilt}(s)$ (velocity reference $\to$ tilt angle, with the wheel-speed loop closed). $G_{tilt}$ has one RHP pole at $\approx +8.9\,\mathrm{rad/s}$ -- the falling mode -- so the Nyquist criterion $Z = N + P$ requires one CCW encirclement of $(-1,0)$ for closed-loop stability.
+\paragraph{Cascade.} Position $\to$ velocity $\to$ tilt $\to$ wheel-velocity $\to$ motor voltage. Each outer loop sees the closed-loop response of everything inside it as its plant. The two raw plants we identify by linearising \texttt{regbot\_1mg.slx} are $G_{wv}(s)$ (motor voltage $\to$ wheel velocity, used for Task~1) and $G_{tilt}(s)$ (velocity reference $\to$ tilt angle with Task~1 closed, used for Task~2). $G_{tilt}$ has one RHP pole at $\approx +8.9\,\mathrm{rad/s}$ -- the falling mode -- so by $Z = N + P$ Nyquist requires one CCW encirclement of $(-1,0)$.
+
+\paragraph{Shared design recipe.} Tasks~1, 3, and~4 follow the same six-step PI-Lead procedure from Lec.~8/9; each task section then plugs in its own numbers.
+
+\begin{center}\small
+\begin{tabular}{rl}
+\textbf{R1.} & Identify plant -- linearise around equilibrium, read off poles, zeros, DC gain. \\
+\textbf{R2.} & Pick $\omega_c$, $\gamma_M \geq 60^{\circ}$, $N_i = 3$. \\
+\textbf{R3.} & Place the PI zero at $\tau_i = N_i/\omega_c$ (phase contribution $\arctan(N_i) - 90^{\circ} = -18.4^{\circ}$ at $\omega_c$). \\
+\textbf{R4.} & Phase balance -- if combined plant$+$PI phase $< -180^{\circ} + \gamma_M$ at $\omega_c$, add a Lead. \\
+\textbf{R5.} & $K_P = 1 / |C_{\mathrm{shape}}(j\omega_c)\,G(j\omega_c)|$ -- crosses $0\,\mathrm{dB}$ at $\omega_c$. \\
+\textbf{R6.} & Verify with \texttt{margin(L)}, closed-loop step, hardware. \\
+\end{tabular}
+\end{center}
+
+Task~2 (balance) prepends two extra steps because $G_{tilt}$ has an RHP pole: a sign flip and a ``post-integrator'' at $|G_{tilt}|$'s magnitude peak (Method~2). The standard recipe then runs on the reshaped plant.
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=\linewidth]{images/regbot_simulink_model.png}
-    \caption{Top-level Simulink model. Left to right: position gain $K_{p,pos}$, velocity PI $K_{p,\mathrm{vel}} \cdot \frac{\tau_{i,\mathrm{vel}} s + 1}{\tau_{i,\mathrm{vel}} s} $, the \texttt{Tilt\_Controller} subsystem (Section~\ref{sec:balance}), the wheel-velocity PI with feed-forward, the $\pm 9\,\mathrm{V}$ limiter, and the \texttt{robot with balance} Simscape Multibody plant.}
+    \includegraphics[width=0.80\linewidth]{images/regbot_simulink_model.png}
+    \caption{Top-level Simulink model. Left to right: position gain $K_{p,pos}$, velocity PI $K_{p,\mathrm{vel}} (\tau_{i,\mathrm{vel}} s + 1)/(\tau_{i,\mathrm{vel}} s)$, the \texttt{Tilt\_Controller} subsystem (Section~\ref{sec:balance}), the wheel-velocity PI with feed-forward, the $\pm 9\,\mathrm{V}$ limiter, and the \texttt{robot with balance} Simscape Multibody plant.}
     \label{fig:simulink_top_level}
 \end{figure}

@@ -1,26 +1,48 @@
 \section{Wheel Speed Controller (Task 1)}
 \label{sec:wheel-speed}
 
-\paragraph{Plant.} Day~5 on-floor 1-pole identification: $G_{vel}(s) = 2.198/(s + 5.985)$ (DC gain $0.367\,\mathrm{(m/s)/V}$, $\tau = 167\,\mathrm{ms}$).
+\paragraph{What's special.} First-order plant; the cleanest run of the shared recipe (§\ref{sec:architecture}). No Lead needed.
 
-\paragraph{Design.} Specs $\omega_c = 30\,\mathrm{rad/s}$, $\gamma_M \geq 60^{\circ}$, $N_i = 3$. PI form: $C_{wv}(s) = K_p (\tau_i s + 1)/(\tau_i s)$ with $\tau_i = N_i/\omega_c = 0.100\,\mathrm{s}$. Phase balance at $\omega_c$: $\angle G_{vel}(j30) = -78.7^{\circ}$, $\phi_{PI} = -18.4^{\circ}$, total $-97.1^{\circ}$ giving natural $\gamma_M = 82.9^{\circ}$ -- comfortably above spec, no Lead. From $|L(j\omega_c)| = 1$:
-\begin{equation}
-    K_p = \frac{1}{|C_{PI}(j\omega_c)\,G_{vel}(j\omega_c)|} = \frac{1}{0.0758} = 13.2037.
-\end{equation}
-Final controller: $C_{wv}(s) = 13.2037 \cdot (0.1s + 1)/(0.1s)$. \texttt{margin(L\_wv)}: $\omega_c = 30.00\,\mathrm{rad/s}$, $\gamma_M = 82.85^{\circ}$, $GM = \infty$.
+\paragraph{Plant (R1).} Day~5 on-floor 1-pole identification:
+\[
+G_{vel}(s) = \frac{2.198}{s + 5.985}, \qquad
+\text{DC gain } 0.367\,\mathrm{(m/s)/V}, \qquad
+\tau = 167\,\mathrm{ms}.
+\]
+
+\paragraph{Recipe application (R2--R5).}
+
+\begin{center}\small
+\begin{tabular}{rl}
+$\omega_c,\ \gamma_M,\ N_i$ & $30\,\mathrm{rad/s},\ 60^{\circ},\ 3$ \\
+PI zero: $\tau_i = N_i / \omega_c$ & $0.100\,\mathrm{s}$ \\
+$\angle G_{vel}(j30)$ & $-78.7^{\circ}$ \\
+$\phi_{PI} = \arctan(N_i) - 90^{\circ}$ & $-18.4^{\circ}$ \\
+Combined phase, natural $\gamma_M$ & $-97.1^{\circ}$, \ $82.9^{\circ}$ -- well above spec, no Lead \\
+$|L|_{\mathrm{unscaled}}$ at $\omega_c$ & $0.0758$ \\
+$K_P = 1 / |L|_{\mathrm{unscaled}}$ & $\mathbf{13.20}$ \\
+\end{tabular}
+\end{center}
+
+\noindent Final controller: $C_{wv}(s) = 13.20 \cdot (0.1s + 1)/(0.1s)$.
+
+\paragraph{Verify (R6).} \texttt{margin(L\_wv)}: $\omega_c = 30.00\,\mathrm{rad/s}$, $\gamma_M = 82.85^{\circ}$, $GM = \infty$ (only two open-loop poles -- phase asymptotes at $-180^{\circ}$ but never crosses, so no finite gain destabilises the loop).
 
 \begin{figure}[H]
     \centering
-    \begin{subfigure}[t]{0.48\linewidth}
+    \begin{subfigure}[t]{0.32\linewidth}
         \includegraphics[width=\linewidth]{images/regbot_task1_bode.png}
-        \caption{Open-loop $L_{wv}$.}
-    \end{subfigure}
-    \hfill
-    \begin{subfigure}[t]{0.48\linewidth}
+        \caption{Open-loop $L_{wv}$ (Simulink).}
+    \end{subfigure}\hfill
+    \begin{subfigure}[t]{0.32\linewidth}
         \includegraphics[width=\linewidth]{images/regbot_task1_step.png}
-        \caption{Closed-loop step.}
+        \caption{Closed-loop step (Simulink).}
+    \end{subfigure}\hfill
+    \begin{subfigure}[t]{0.32\linewidth}
+        \includegraphics[width=\linewidth]{images/test0_wheel_speed_v3_onfloor_2026-04-22.png}
+        \caption{Hardware step (Test~0).}
     \end{subfigure}
-    \caption{Task~1 verification.}
+    \caption{Task~1 verification: Simulink Bode, Simulink closed-loop step, hardware step (Test~0).}
 \end{figure}
 
-\paragraph{Hardware (Test~0).} Mission: \texttt{bal=0, vel=0.3, log=15 : time=3}. Robot laid on its side, balance disabled. Rise to $0.27\,\mathrm{m/s}$ in $0.012\,\mathrm{s}$, peak motor voltage $2.60\,\mathrm{V}$, L/R wheel agreement $0.76\,\%$. Hardware rise time matches the designed first-order-equivalent prediction $\tau_{\mathrm{cl}} \approx 2.2/\omega_c \approx 73\,\mathrm{ms}$ (within one $15\,\mathrm{ms}$ log sample).
+\paragraph{Hardware (Test~0).} Mission \texttt{bal=0, vel=0.3, log=15 : time=3} (robot on its side, balance disabled). Rise to $0.27\,\mathrm{m/s}$ in $\mathbf{0.012\,s}$, peak motor voltage $2.60\,\mathrm{V}$, L/R wheel agreement $0.76\,\%$. The first-order prediction $\tau_{\mathrm{cl}} \approx 2.2/\omega_c \approx 73\,\mathrm{ms}$ matches within one $15\,\mathrm{ms}$ log sample.

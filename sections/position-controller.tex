@@ -1,38 +1,42 @@
 \section{Position Controller (Task 4)}
 \label{sec:position}
+\enlargethispage{6\baselineskip}
 
-\paragraph{Plant.} With Tasks~1+2+3 closed, $G_{pos,\mathrm{outer}}(s) = \mathrm{pos}_\mathrm{ref} \to x$ is 11th-order, 0 RHP poles, RHP zero at $+8.51\,\mathrm{rad/s}$ (inherited), \emph{plus a free integrator at the origin} ($x = \int v\,dt$). Type-1 plant $\Rightarrow$ pure P drives step error to zero -- no I-term needed.
+\paragraph{What's special.} The plant inherits a free integrator from $v \to x$, so the open-loop is \textbf{Type-1}. Pure P drives step error to zero -- no I-term needed. And $\omega_c$ is iterated against the mission spec rather than fixed by cascade rules.
 
-\paragraph{Design.} Unlike Tasks~1--3, $\omega_c$ is iterated against the mission spec (peak $v \geq 0.7\,\mathrm{m/s}$ on a 2\,m move within 10\,s):
+\paragraph{Plant (R1).} Linearise $\mathrm{pos}_{\mathrm{ref}} \to x$ with Tasks~1+2+3 closed: 11th-order $G_{pos,\mathrm{outer}}$, $0$ RHP poles, inherited RHP zero at $+8.51\,\mathrm{rad/s}$, \emph{plus} a free integrator at the origin ($x = \int v\,dt$).
+
+\paragraph{$\omega_c$ iteration.} Target: 2\,m move with peak $v \geq 0.7\,\mathrm{m/s}$ within $10\,\mathrm{s}$.
 
 \begin{table}[H]
-    \centering
+    \centering\small
     \begin{tabular}{c|c|c|c|c|l}
         $\omega_c$ & $\gamma_M$ & $GM$ & Peak $v$ & Settle (2\,\%) & Verdict \\
         \hline
         $0.2$ & $87^{\circ}$ & $38\,\mathrm{dB}$ & $0.33\,\mathrm{m/s}$ & $20\,\mathrm{s}$ & Fails velocity \& settle \\
         $0.5$ & $66^{\circ}$ & $25\,\mathrm{dB}$ & $0.68\,\mathrm{m/s}$ & $12\,\mathrm{s}$ & Just below $0.7$ \\
-        $\mathbf{0.6}$ & $\mathbf{60^{\circ}}$ & $\mathbf{25\,\mathrm{dB}}$ & $\mathbf{0.80}$ & $\mathbf{11\,\mathrm{s}}$ & \textbf{Chosen} \\
+        $\mathbf{0.6}$ & $\mathbf{60^{\circ}}$ & $\mathbf{25\,\mathrm{dB}}$ & $\mathbf{0.80\,\mathrm{m/s}}$ & $\mathbf{11\,\mathrm{s}}$ & \textbf{Chosen} \\
     \end{tabular}
-    \caption{$\omega_c$ iteration. The 11\,s 2\%-envelope settling is pessimistic; the mission only requires \emph{reaching} 2\,m within 10\,s.}
+    \caption{$\omega_c$ iteration. The $11\,\mathrm{s}$ 2\,\%-envelope settle is pessimistic; the mission only requires \emph{reaching} 2\,m within $10\,\mathrm{s}$.}
 \end{table}
 
-At $\omega_c = 0.6\,\mathrm{rad/s}$: $\angle G_{pos,\mathrm{outer}}(j0.6) = -122.9^{\circ}$, required Lead $+2.85^{\circ}$ -- tiny. The ideal Lead $(\tau_d s + 1)$ is improper and Simulink's \texttt{Transfer Fcn} block rejects it; the alternative is a proper Lead with a filter pole that costs phase back. Since the required Lead is only $\approx 3^{\circ}$, we drop it. From $|L(j\omega_c)| = 1$: $K_P = 1/1.848 = 0.5411$, $\tau_d = 0$.
-
-\texttt{margin(L\_pos)}: $\omega_c = 0.60$, $\gamma_M \approx 57^{\circ}$ (after Lead drop), $GM = 25.17\,\mathrm{dB}$. Linear 2\,m step: peak $v = 0.753\,\mathrm{m/s}$ ($\geq 0.7$ \checkmark).
+\paragraph{Design at $\omega_c = 0.6\,\mathrm{rad/s}$.} $\angle G_{pos,\mathrm{outer}}(j0.6) = -122.9^{\circ}$, required Lead $+2.85^{\circ}$. The ideal $(\tau_d s + 1)$ is improper (Simulink rejects it); the proper alternative adds a filter pole that costs $\sim 3^{\circ}$ back. Since the required Lead is only $\approx 3^{\circ}$, we drop it: $\tau_d = 0$, $K_P = \mathbf{0.5411}$. \texttt{margin(L\_pos)}: $\omega_c = 0.60$, $\gamma_M \approx 57^{\circ}$, $GM = 25.17\,\mathrm{dB}$. Linear 2\,m step: peak $v = 0.753\,\mathrm{m/s}$ ($\geq 0.7$ \checkmark).
 
 \begin{figure}[H]
     \centering
-    \begin{subfigure}[t]{0.48\linewidth}
+    \begin{subfigure}[t]{0.32\linewidth}
         \includegraphics[width=\linewidth]{images/regbot_task4_loop_bode.png}
-        \caption{Open-loop $L_\mathrm{pos}$.}
-    \end{subfigure}
-    \hfill
-    \begin{subfigure}[t]{0.48\linewidth}
+        \caption{Open-loop $L_{\mathrm{pos}}$ (Simulink).}
+    \end{subfigure}\hfill
+    \begin{subfigure}[t]{0.32\linewidth}
         \includegraphics[width=\linewidth]{images/regbot_task4_sim_step_v3.png}
-        \caption{Simulink full-cascade 2\,m step at $t = 1\,\mathrm{s}$.}
+        \caption{Simulink full-cascade 2\,m step.}
+    \end{subfigure}\hfill
+    \begin{subfigure}[t]{0.32\linewidth}
+        \includegraphics[width=\linewidth]{images/test4_position_2m_v3_onfloor_2026-04-22.png}
+        \caption{Hardware 2\,m step (Test~4).}
     \end{subfigure}
-    \caption{Task~4 verification.}
+    \caption{Task~4 verification: Simulink Bode, Simulink full-cascade step, hardware step.}
 \end{figure}
 
-\paragraph{Hardware (Test~4).} Mission: \texttt{vel=0, bal=1, log=15 : time=2 ; topos=2, vel=1.2 : time=10}. Final position $1.964\,\mathrm{m}$ ($3.6\,\mathrm{cm}$ short), no overshoot, no late limit cycle. Peak velocity $0.79\,\mathrm{m/s}$ ($\geq 0.7$ \checkmark), peak forward tilt $+17.3^{\circ}$, tilt std $2.93^{\circ}$, peak motor voltage $4.95\,\mathrm{V}$. Cleanest test of the campaign; the linear-model peak-$v$ prediction $0.75\,\mathrm{m/s}$ matches hardware closely.
+\paragraph{Hardware (Test~4).} Mission \texttt{vel=0, bal=1, log=15 : time=2 ; topos=2, vel=1.2 : time=10}. Final $\mathbf{1.964\,m}$ ($3.6\,\mathrm{cm}$ short), no overshoot. Peak $v\!=\!0.79\,\mathrm{m/s}$ ($\geq 0.7$ \checkmark), peak tilt $+17.3^{\circ}$, $V_{\max}\!=\!4.95\,\mathrm{V}$. The linear $0.75\,\mathrm{m/s}$ peak-$v$ prediction matches hardware.

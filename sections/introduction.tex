@@ -1,11 +1,15 @@
 \section{Introduction}
 \label{sec:introduction}
 
-The REGBOT is a two-wheeled inverted pendulum. Without active control it falls; stable balance plus motion tracking requires a cascaded controller. This report documents four nested loops:
+The REGBOT is a two-wheeled, self-balancing robot -- an inverted pendulum on wheels. Without active control it falls over. The assignment is to design a controller that keeps it upright, drives it forward at a commanded speed, and moves it to a target position.
+
+We solve this with a four-loop cascade, designed from the inside out:
+
 \begin{enumerate}[leftmargin=*,nosep]
-    \item wheel-speed PI (innermost);
-    \item balance PILead with post-integrator (Lecture~10 Method~2) -- stabilises the open-loop unstable pendulum;
-    \item velocity PI -- drives the robot at a commanded speed while balancing;
-    \item position P (outermost) -- moves the robot to a target distance.
+    \item \textbf{Wheel-speed PI} (innermost) -- turns a wheel-velocity reference into a motor voltage.
+    \item \textbf{Balance PILead + post-PI} -- holds the body upright despite the pendulum being open-loop unstable. Uses Lecture~10 Method~2.
+    \item \textbf{Velocity PI} -- commands the tilt angle that produces the requested forward speed.
+    \item \textbf{Position P} (outermost) -- commands the velocity that closes a target-position step.
 \end{enumerate}
-Each is designed analytically with the frequency-domain phase-balance method, verified in Simulink (Simscape Multibody), and validated on the physical robot.
+
+\noindent Each loop is designed analytically with frequency-domain phase balance (Lec.~8/9), verified in Simulink (Simscape Multibody), and validated on the physical robot.

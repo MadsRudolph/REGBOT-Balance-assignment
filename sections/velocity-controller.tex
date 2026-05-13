@@ -1,26 +1,48 @@
 \section{Velocity Controller (Task 3)}
 \label{sec:velocity}
 
-\paragraph{Plant.} Linearise $\theta_\mathrm{ref} \to v$ with Tasks~1+2 closed: 9th-order $G_{vel,\mathrm{outer}}$, 0 RHP poles (balance loop did its job), one RHP zero at $+8.51\,\mathrm{rad/s}$ (non-minimum phase: wheels must roll backward to tilt forward), and a free integrator inherited from Task~2's post-integrator. The RHP zero caps achievable bandwidth via the rule-of-thumb $\omega_c \leq z/5 \approx 1.7\,\mathrm{rad/s}$.
+\paragraph{What's special.} An RHP zero at $+8.51\,\mathrm{rad/s}$ caps the achievable bandwidth: rule-of-thumb $\omega_c \leq z/5 \approx 1.7\,\mathrm{rad/s}$. Otherwise the standard recipe (§\ref{sec:architecture}) applies directly.
 
-\paragraph{Design.} Specs $\omega_c = 1\,\mathrm{rad/s}$ (well under the RHP-zero ceiling and 15$\times$ slower than Task~2), $\gamma_M \geq 60^{\circ}$, $N_i = 3$. PI zero at $\tau_i = N_i/\omega_c = 3.000\,\mathrm{s}$. Phase balance at $\omega_c$: $\angle G_{vel,\mathrm{outer}}(j1) = -92.6^{\circ}$, $\phi_{PI} = -18.4^{\circ}$, required Lead $-9.0^{\circ}$ -- negative, so no Lead. From $|L(j\omega_c)| = 1$:
-\begin{equation}
-    K_P = \frac{1}{|C_{PI}(j1)\,G_{vel,\mathrm{outer}}(j1)|} = \frac{1}{6.325} = 0.1581.
-\end{equation}
-Final controller: $C_{vel}(s) = 0.1581 \cdot (3s + 1)/(3s)$. \texttt{margin(L\_vel)}: $\omega_c = 1.00\,\mathrm{rad/s}$, $\gamma_M = 68.98^{\circ}$, $GM = 5.84\,\mathrm{dB}$, 0 RHP closed-loop poles.
+\paragraph{Plant (R1).} Linearise $\theta_{\mathrm{ref}} \to v$ with Tasks~1+2 closed: 9th-order $G_{vel,\mathrm{outer}}$, $0$ RHP poles (the balance loop took care of those), one RHP zero at $+8.51\,\mathrm{rad/s}$ (non-minimum phase -- wheels roll backward to tilt forward), plus a free integrator inherited from Task~2's post-integrator.
+
+\paragraph{Recipe application (R2--R5).}
+
+\begin{center}\small
+\begin{tabular}{rl}
+$\omega_c,\ \gamma_M,\ N_i$ & $1\,\mathrm{rad/s}$ (under RHP-zero cap of $1.7$, and $15\times$ slower than Task~2),\ $60^{\circ}$,\ $3$ \\
+PI zero: $\tau_i = N_i / \omega_c$ & $3.000\,\mathrm{s}$ \\
+$\angle G_{vel,\mathrm{outer}}(j1)$ & $-92.6^{\circ}$ \\
+$\phi_{PI}$ & $-18.4^{\circ}$ \\
+Required $\phi_{\mathrm{Lead}}$ & $-9.0^{\circ}$ (negative) -- no Lead \\
+$K_P = 1 / 6.325$ & $\mathbf{0.1581}$ \\
+\end{tabular}
+\end{center}
+
+\noindent Final controller: $C_{vel}(s) = 0.1581 \cdot (3s + 1)/(3s)$.
+
+\paragraph{Verify (R6).} \texttt{margin(L\_vel)}: $\omega_c = 1.00\,\mathrm{rad/s}$, $\gamma_M = 68.98^{\circ}$, $GM = 5.84\,\mathrm{dB}$, $0$ RHP closed-loop poles.
 
 \begin{figure}[H]
     \centering
-    \begin{subfigure}[t]{0.48\linewidth}
+    \begin{subfigure}[t]{0.32\linewidth}
         \includegraphics[width=\linewidth]{images/regbot_task3_loop_bode.png}
-        \caption{Open-loop $L_\mathrm{vel}$.}
+        \caption{Open-loop $L_{\mathrm{vel}}$ (Simulink).}
+    \end{subfigure}\hfill
+    \begin{subfigure}[t]{0.32\linewidth}
+        \includegraphics[width=\linewidth]{images/regbot_task3_step.png}
+        \caption{Closed-loop step (Simulink).}
+    \end{subfigure}\hfill
+    \begin{subfigure}[t]{0.32\linewidth}
+        \includegraphics[width=\linewidth]{images/test3b_timeseries_v3_onfloor_2026-04-22.png}
+        \caption{Hardware time series (Test~3b).}
     \end{subfigure}
-    \hfill
-    \begin{subfigure}[t]{0.48\linewidth}
-        \includegraphics[width=\linewidth]{images/test3b_xy_v3_onfloor_2026-04-22.png}
-        \caption{Test~3b XY trajectory at $0.8\,\mathrm{m/s}$ ($1\,\mathrm{m}$ sides, $0.2\,\mathrm{m}$ corner radius). Cumulative heading $359.8^{\circ}$.}
-    \end{subfigure}
-    \caption{Task~3 verification + hardware square run.}
+    \caption{Task~3 verification: Simulink Bode and step, hardware square-run time series.}
 \end{figure}
 
-\paragraph{Hardware (Test~3b, $0.8\,\mathrm{m/s}$ square).} Mission (repeated 4$\times$): \texttt{vel=0.8 : dist=1 ; vel=0.8, tr=0.2 : turn=90}. Robot completed all four sides and three turns without falling. Peak tilt $+25.5^{\circ}$ (corner acceleration), tilt std $5.03^{\circ}$, peak motor voltage $7.31\,\mathrm{V}$ ($91\,\%$ of the $\pm 8\,\mathrm{V}$ budget -- cost of the higher inner-loop gain on sharp corner $v_\mathrm{ref}$ steps). Cumulative heading error $0.06\,\%$.
+\paragraph{Hardware (Test~3b, $0.8\,\mathrm{m/s}$ square).} Mission repeated $4\times$: \texttt{vel=0.8 : dist=1 ; vel=0.8, tr=0.2 : turn=90}. Robot completed all four sides and three turns without falling. Peak tilt $+25.5^{\circ}$ (at corner acceleration), peak motor voltage $7.31\,\mathrm{V}$ ($91\,\%$ of the $\pm 8\,\mathrm{V}$ budget), cumulative heading error $0.06\,\%$.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.30\linewidth]{images/test3b_xy_v3_onfloor_2026-04-22.png}
+    \caption{Test~3b XY trajectory at $0.8\,\mathrm{m/s}$ ($1\,\mathrm{m}$ sides, $0.2\,\mathrm{m}$ corner radius); cumulative heading $359.8^{\circ}$.}
+\end{figure}
