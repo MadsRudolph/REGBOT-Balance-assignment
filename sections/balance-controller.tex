@@ -1,18 +1,18 @@
 \section{Balance Controller (Task 2)}
 \label{sec:balance}
 
-\paragraph{What's special.} The plant is open-loop \emph{unstable} (one RHP pole = the inverted-pendulum falling mode). A standard PI-Lead cannot stabilise it -- no positive gain makes the Nyquist plot of $G_{tilt}$ encircle $(-1,0)$ counter-clockwise. We use Lecture~10 \emph{Method~2}: a sign flip and a ``post-integrator'' reshape the plant into a stabilisable form, then the usual PI-Lead recipe runs on top.
+\paragraph{Why it is hard.} The plant is open-loop \emph{unstable} (one RHP pole = the inverted-pendulum falling mode). A standard PI-Lead cannot stabilise it, because no positive gain makes the Nyquist plot of $G_{tilt}$ encircle $(-1,0)$ counter-clockwise. So we use \emph{Method~2} from Lecture~10: a sign flip and a ``post-integrator'' reshape the plant into a stabilisable form, and the usual PI-Lead recipe then runs on top.
 
 \paragraph{Plant.} Linearising \texttt{vel\_ref} $\to$ tilt with Task~1 closed gives a 7th-order $G_{tilt}(s)$ with one RHP pole at $\approx +8.9\,\mathrm{rad/s}$ and one RHP zero (the non-minimum-phase ``wheels-roll-backward-first'' signature). With $Z = 0$ and $P = 1$ the Nyquist criterion demands $N = -1$ (exactly one CCW encirclement).
 
-\paragraph{Method~2 -- pre-treatment.}
+\paragraph{Method~2 pre-treatment.}
 \begin{enumerate}[leftmargin=*,nosep,label=\textbf{M\arabic*.}]
-    \item \textbf{Sign of $K_{PS}$.} $G_{tilt}$ has DC gain $> 0$, and positive gain only scales the Nyquist plot radially -- it cannot rotate the curve to the left of $(-1,0)$. So $\text{sign}(K_{PS}) = -1$; the minus sign is absorbed into the post-integrator below.
-    \item \textbf{Post-integrator at $|G_{tilt}|$'s peak.} The plant's magnitude rises into a resonance peak at $\omega_{\mathrm{peak}} = 8.03\,\mathrm{rad/s}$. Place the PI zero there: $\tau_{i,\mathrm{post}} = 1/\omega_{\mathrm{peak}} = 0.1245\,\mathrm{s}$. The reshaped plant
+    \item \textbf{Sign of $K_{PS}$.} $G_{tilt}$ has DC gain $> 0$, and positive gain only scales the Nyquist plot radially, so it cannot rotate the curve to the left of $(-1,0)$. This means $\text{sign}(K_{PS}) = -1$, and the minus sign is absorbed into the post-integrator below.
+    \item \textbf{Post-integrator at the peak of $|G_{tilt}|$.} The plant's magnitude rises into a resonance peak at $\omega_{\mathrm{peak}} = 8.03\,\mathrm{rad/s}$, and we place the PI zero there: $\tau_{i,\mathrm{post}} = 1/\omega_{\mathrm{peak}} = 0.1245\,\mathrm{s}$. The reshaped plant
     \[
         G_{tilt,\mathrm{post}}(s) = -\,C_{PI,\mathrm{post}}(s)\,G_{tilt}(s)
     \]
-    has \emph{monotonically decreasing} magnitude and a Nyquist that makes exactly one CCW encirclement of $(-1,0)$ -- the visual proof that Method~2 worked.
+    has \emph{monotonically decreasing} magnitude and a Nyquist that makes exactly one CCW encirclement of $(-1,0)$, which is the visual proof that Method~2 worked.
 \end{enumerate}
 
 \begin{figure}[H]
@@ -29,7 +29,7 @@
     \label{fig:task2_method2}
 \end{figure}
 
-\paragraph{Standard recipe on $G_{tilt,\mathrm{post}}$.} Apply R2--R5 from §\ref{sec:architecture}.
+\paragraph{Standard recipe on $G_{tilt,\mathrm{post}}$.} We now apply R2--R5 from §\ref{sec:architecture}.
 
 \begin{center}\small
 \begin{tabular}{rl}
@@ -44,7 +44,7 @@ $K_P$ & $\mathbf{1.1999}$ \\
 \end{tabular}
 \end{center}
 
-\noindent The Lead is realised through the gyro signal -- which directly measures $\dot{\theta} = s\theta$ -- as $\tau_d \cdot \mathrm{gyro} + \theta$. This is the \emph{ideal} Lead $(\tau_d s + 1)$ without the filter pole $1/(\alpha \tau_d s + 1)$: the noise issue an ordinary Lead protects against is gone because the differentiation is measured, not numerical.
+\noindent We realise the Lead through the gyro signal, which directly measures $\dot{\theta} = s\theta$, as $\tau_d \cdot \mathrm{gyro} + \theta$. This is the \emph{ideal} Lead $(\tau_d s + 1)$ without the filter pole $1/(\alpha \tau_d s + 1)$: the noise problem that an ordinary Lead guards against is gone, because the differentiation is measured rather than numerical.
 
 \[
 C_{\mathrm{tilt}}(s) = -1.1999 \cdot \frac{0.1245s + 1}{0.1245s} \cdot \frac{0.2s + 1}{0.2s} \cdot (0.0442s + 1).
@@ -52,7 +52,7 @@ C_{\mathrm{tilt}}(s) = -1.1999 \cdot \frac{0.1245s + 1}{0.1245s} \cdot \frac{0.2
 
 The Simulink \texttt{Tilt\_Controller} subsystem implements this stack in series, with $\tau_d \cdot \mathrm{gyro}$ summed onto $\mathrm{pitch}$ on the measurement side so the Lead has no derivative kick on $\theta_{\mathrm{ref}}$.
 
-\paragraph{Verify (R6).} \texttt{margin(L\_tilt)}: $\omega_c = 15.00$, $\gamma_M = 60.00^{\circ}$, $GM = -5.58\,\mathrm{dB}$ (negative GM is the \emph{lower} bound on $|K|$ for unstable plants), $0$ RHP closed-loop poles. Linear IC release from $\theta_0 = 10^{\circ}$ settles in $\mathbf{1.34\,s}$ with $\sim 6.6^{\circ}$ undershoot (RHP-zero signature).
+\paragraph{Checking the loop (R6).} \texttt{margin(L\_tilt)}: $\omega_c = 15.00$, $\gamma_M = 60.00^{\circ}$, $GM = -5.58\,\mathrm{dB}$ (a negative GM is the \emph{lower} bound on $|K|$ for unstable plants), $0$ RHP closed-loop poles. The linear IC release from $\theta_0 = 10^{\circ}$ settles in $\mathbf{1.34\,s}$ with $\sim 6.6^{\circ}$ undershoot, the RHP-zero signature.
 
 \begin{figure}[H]
     \centering
@@ -72,4 +72,4 @@ The Simulink \texttt{Tilt\_Controller} subsystem implements this stack in series
     \label{fig:task2-verify}
 \end{figure}
 
-\paragraph{Hardware (Test~3a).} \texttt{vel=0, bal=1, log=15 : time=10}: robot held upright, balance enabled, released. Held the full $10\,\mathrm{s}$, drift $\mathbf{0.343\,m}$ (spec $\leq 0.5$ \checkmark), confirming the closed loop is stable on the physical plant. \emph{Firmware:} \texttt{[cbal] kp} must be entered as $\mathbf{-1.1999}$ -- the firmware does not absorb Method~2's sign internally (positive $K_P$ caused a runaway in the first campaign).
+\paragraph{Hardware (Test~3a).} \texttt{vel=0, bal=1, log=15 : time=10}: the robot was held upright, balance enabled, then released. It held the full $10\,\mathrm{s}$ with a drift of $\mathbf{0.343\,m}$ (spec $\leq 0.5$ \checkmark), which confirms the closed loop is stable on the physical plant. \emph{Firmware:} \texttt{[cbal] kp} must be entered as $\mathbf{-1.1999}$, because the firmware does not absorb Method~2's sign internally (a positive $K_P$ caused a runaway in the first campaign).

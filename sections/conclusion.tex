@@ -19,7 +19,7 @@ The four-loop cascade meets every assignment specification, in simulation and on
 
 \paragraph{Key findings.}
 \begin{itemize}[leftmargin=*,nosep]
-    \item \textbf{Task~2 (Method~2)} is the structural heart: sign flip $+$ post-integrator at $|G_{tilt}|$'s peak reshape the unstable plant, then a standard PI-Lead runs on top. The Lead uses the gyro directly ($\tau_d \dot{\theta} + \theta$), so no filter pole. \textbf{Firmware:} \texttt{[cbal] kp} must be $\mathbf{-1.1999}$; positive caused a runaway in the first campaign.
-    \item \textbf{Task~3} is bandwidth-capped by the RHP zero at $+8.51\,\mathrm{rad/s}$ ($\omega_c \leq z/5$); pushing closer would produce ugly inverse-response transients.
-    \item \textbf{Task~4} exploits the free $v\!\to\!x$ integrator: Type-1 plant $+$ pure P gives zero step error; $\omega_c$ was iterated against the mission spec rather than derived from cascade rules.
+    \item \textbf{Task~2 (Method~2)} was the key part of the design: a sign flip $+$ post-integrator at the peak of $|G_{tilt}|$ reshape the unstable plant, and a standard PI-Lead then runs on top. The Lead uses the gyro directly ($\tau_d \dot{\theta} + \theta$), so there is no filter pole. \textbf{Firmware:} \texttt{[cbal] kp} must be $\mathbf{-1.1999}$; a positive value caused a runaway in the first campaign.
+    \item \textbf{Task~3} is bandwidth-capped by the RHP zero at $+8.51\,\mathrm{rad/s}$ ($\omega_c \leq z/5$), and pushing closer would produce pronounced inverse-response transients.
+    \item \textbf{Task~4} uses the free $v\!\to\!x$ integrator: a Type-1 plant with pure P gives zero step error, and $\omega_c$ was iterated against the mission spec rather than derived from the cascade rules.
 \end{itemize}

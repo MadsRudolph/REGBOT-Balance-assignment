@@ -1,11 +1,11 @@
 \section{Position Controller (Task 4)}
 \label{sec:position}
 
-\paragraph{What's special.} The plant inherits a free integrator from $v \to x$, so the open-loop is \textbf{Type-1}. Pure P drives step error to zero -- no I-term needed. And $\omega_c$ is iterated against the mission spec rather than fixed by cascade rules.
+\paragraph{What is different here.} The plant inherits a free integrator from $v \to x$, so the open loop is \textbf{Type-1} and pure P already drives the step error to zero, with no I-term needed. We also iterate $\omega_c$ against the mission spec here, rather than fixing it from the cascade rules.
 
-\paragraph{Plant (R1).} Linearise $\mathrm{pos}_{\mathrm{ref}} \to x$ with Tasks~1+2+3 closed: 11th-order $G_{pos,\mathrm{outer}}$, $0$ RHP poles, inherited RHP zero at $+8.51\,\mathrm{rad/s}$, \emph{plus} a free integrator at the origin ($x = \int v\,dt$).
+\paragraph{Plant (R1).} Linearising $\mathrm{pos}_{\mathrm{ref}} \to x$ with Tasks~1+2+3 closed gives an 11th-order $G_{pos,\mathrm{outer}}$ with $0$ RHP poles, the inherited RHP zero at $+8.51\,\mathrm{rad/s}$, and \emph{also} a free integrator at the origin ($x = \int v\,dt$).
 
-\paragraph{$\omega_c$ iteration.} Target: 2\,m move with peak $v \geq 0.7\,\mathrm{m/s}$ within $10\,\mathrm{s}$.
+\paragraph{$\omega_c$ iteration.} The target is a 2\,m move with a peak $v \geq 0.7\,\mathrm{m/s}$ within $10\,\mathrm{s}$.
 
 \begin{table}[H]
     \centering\small
@@ -19,7 +19,7 @@
     \caption{$\omega_c$ iteration with the design controller (Lead in place). The $11\,\mathrm{s}$ 2\,\%-envelope settle is pessimistic; the mission only requires \emph{reaching} 2\,m within $10\,\mathrm{s}$. \emph{*Starred values are the design-controller numbers; the as-built firmware controller drops the Lead, giving $\gamma_M = 57.18^{\circ}$, $GM = 26.20\,\mathrm{dB}$, peak $v = 0.772\,\mathrm{m/s}$ (see body and Fig.~\ref{fig:task4-verify}).}}
 \end{table}
 
-\paragraph{Design at $\omega_c = 0.6\,\mathrm{rad/s}$.} $\angle G_{pos,\mathrm{outer}}(j0.6) = -122.9^{\circ}$, required Lead $+2.85^{\circ}$. The ideal $(\tau_d s + 1)$ is improper (Simulink rejects it); the proper alternative adds a filter pole that costs $\sim 3^{\circ}$ back. Since the required Lead is only $\approx 3^{\circ}$, we drop it: $\tau_d = 0$, $K_P = \mathbf{0.5411}$. \texttt{margin(L\_pos)}: $\omega_c = 0.60$, $\gamma_M = 57.18^{\circ}$, $GM = 26.20\,\mathrm{dB}$. Linear 2\,m step: peak $v = 0.772\,\mathrm{m/s}$ ($\geq 0.7$ \checkmark).
+\paragraph{Design at $\omega_c = 0.6\,\mathrm{rad/s}$.} Here $\angle G_{pos,\mathrm{outer}}(j0.6) = -122.9^{\circ}$ and the required Lead is $+2.85^{\circ}$. The ideal $(\tau_d s + 1)$ is improper (Simulink rejects it), and the proper alternative adds a filter pole that costs $\sim 3^{\circ}$ back. Since the required Lead is only $\approx 3^{\circ}$, we drop it: $\tau_d = 0$, $K_P = \mathbf{0.5411}$. \texttt{margin(L\_pos)} then gives $\omega_c = 0.60$, $\gamma_M = 57.18^{\circ}$, $GM = 26.20\,\mathrm{dB}$, and the linear 2\,m step reaches a peak $v = 0.772\,\mathrm{m/s}$ ($\geq 0.7$ \checkmark).
 
 \begin{figure}[H]
     \centering
@@ -39,4 +39,4 @@
     \label{fig:task4-verify}
 \end{figure}
 
-\paragraph{Hardware (Test~4).} Mission \texttt{vel=0, bal=1, log=15 : time=2 ; topos=2, vel=1.2 : time=10}. Final $\mathbf{1.964\,m}$ ($3.6\,\mathrm{cm}$ short), no overshoot. Peak $v\!=\!0.79\,\mathrm{m/s}$ ($\geq 0.7$ \checkmark), peak tilt $+17.3^{\circ}$, $V_{\max}\!=\!4.95\,\mathrm{V}$. The linear $0.77\,\mathrm{m/s}$ peak-$v$ prediction matches hardware.
+\paragraph{Hardware (Test~4).} Mission \texttt{vel=0, bal=1, log=15 : time=2 ; topos=2, vel=1.2 : time=10}. The robot stopped at a final $\mathbf{1.964\,m}$ ($3.6\,\mathrm{cm}$ short) with no overshoot, a peak $v\!=\!0.79\,\mathrm{m/s}$ ($\geq 0.7$ \checkmark), a peak tilt of $+17.3^{\circ}$, and $V_{\max}\!=\!4.95\,\mathrm{V}$. The linear $0.77\,\mathrm{m/s}$ peak-$v$ prediction matches the hardware.

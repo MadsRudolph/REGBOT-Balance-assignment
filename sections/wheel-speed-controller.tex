@@ -1,9 +1,9 @@
 \section{Wheel Speed Controller (Task 1)}
 \label{sec:wheel-speed}
 
-\paragraph{What's special.} First-order plant; the cleanest run of the shared recipe (§\ref{sec:architecture}). No Lead needed.
+\paragraph{Why it is simple.} The plant is first order, so this is the cleanest run of the shared recipe (§\ref{sec:architecture}) and no Lead is needed.
 
-\paragraph{Plant (R1).} Day~5 on-floor 1-pole identification:
+\paragraph{Plant (R1).} The Day~5 on-floor test gives a single-pole plant:
 \[
 G_{vel}(s) = \frac{2.198}{s + 5.985}, \qquad
 \text{DC gain } 0.367\,\mathrm{(m/s)/V}, \qquad
@@ -26,7 +26,7 @@ $K_P = 1 / |L|_{\mathrm{unscaled}}$ & $\mathbf{13.20}$ \\
 
 \noindent Final controller: $C_{wv}(s) = 13.20 \cdot (0.1s + 1)/(0.1s)$.
 
-\paragraph{Verify (R6).} \texttt{margin(L\_wv)}: $\omega_c = 30.00\,\mathrm{rad/s}$, $\gamma_M = 82.85^{\circ}$, $GM = \infty$ (only two open-loop poles -- phase asymptotes at $-180^{\circ}$ but never crosses, so no finite gain destabilises the loop).
+\paragraph{Verification (R6).} \texttt{margin(L\_wv)}: $\omega_c = 30.00\,\mathrm{rad/s}$, $\gamma_M = 82.85^{\circ}$, $GM = \infty$ (with only two open-loop poles, the phase asymptotes at $-180^{\circ}$ but never crosses it, so no finite gain destabilises the loop).
 
 \begin{figure}[H]
     \centering
@@ -46,4 +46,4 @@ $K_P = 1 / |L|_{\mathrm{unscaled}}$ & $\mathbf{13.20}$ \\
     \label{fig:task1-verify}
 \end{figure}
 
-\paragraph{Hardware (Test~0).} Mission \texttt{bal=0, vel=0.3, log=15 : time=3} (robot on its side, balance disabled). Rise to $0.27\,\mathrm{m/s}$ in $\mathbf{0.087\,s}$, peak motor voltage $2.60\,\mathrm{V}$, L/R wheel agreement $0.76\,\%$. The first-order prediction $t_r \approx 2.2/\omega_c \approx 73\,\mathrm{ms}$ matches within one $15\,\mathrm{ms}$ log sample.
+\paragraph{Hardware (Test~0).} Mission \texttt{bal=0, vel=0.3, log=15 : time=3} (robot on its side, balance disabled). It rose to $0.27\,\mathrm{m/s}$ in $\mathbf{0.087\,s}$, with peak motor voltage $2.60\,\mathrm{V}$ and the L/R wheels agreeing to within $0.76\,\%$. The first-order prediction $t_r \approx 2.2/\omega_c \approx 73\,\mathrm{ms}$ matches within one $15\,\mathrm{ms}$ log sample.

@@ -1,9 +1,9 @@
 \section{Velocity Controller (Task 3)}
 \label{sec:velocity}
 
-\paragraph{What's special.} An RHP zero at $+8.51\,\mathrm{rad/s}$ caps the achievable bandwidth: rule-of-thumb $\omega_c \leq z/5 \approx 1.7\,\mathrm{rad/s}$. Otherwise the standard recipe (§\ref{sec:architecture}) applies directly.
+\paragraph{The bandwidth limit.} An RHP zero at $+8.51\,\mathrm{rad/s}$ caps the achievable bandwidth, with the rule of thumb $\omega_c \leq z/5 \approx 1.7\,\mathrm{rad/s}$. Apart from that, the standard recipe (§\ref{sec:architecture}) applies directly.
 
-\paragraph{Plant (R1).} Linearise $\theta_{\mathrm{ref}} \to v$ with Tasks~1+2 closed: 9th-order $G_{vel,\mathrm{outer}}$, $0$ RHP poles (the balance loop took care of those), one RHP zero at $+8.51\,\mathrm{rad/s}$ (non-minimum phase -- wheels roll backward to tilt forward), plus a free integrator inherited from Task~2's post-integrator.
+\paragraph{Plant (R1).} Linearising $\theta_{\mathrm{ref}} \to v$ with Tasks~1+2 closed gives a 9th-order $G_{vel,\mathrm{outer}}$ with $0$ RHP poles (the balance loop took care of those), one RHP zero at $+8.51\,\mathrm{rad/s}$ (non-minimum phase: the wheels roll backward to tilt forward), plus a free integrator inherited from Task~2's post-integrator.
 
 \paragraph{Recipe application (R2--R5).}
 
@@ -20,7 +20,7 @@ $K_P = 1 / 6.325$ & $\mathbf{0.1581}$ \\
 
 \noindent Final controller: $C_{vel}(s) = 0.1581 \cdot (3s + 1)/(3s)$.
 
-\paragraph{Verify (R6).} \texttt{margin(L\_vel)}: $\omega_c = 1.00\,\mathrm{rad/s}$, $\gamma_M = 68.98^{\circ}$, $GM = 5.84\,\mathrm{dB}$, $0$ RHP closed-loop poles.
+\paragraph{Verification (R6).} \texttt{margin(L\_vel)}: $\omega_c = 1.00\,\mathrm{rad/s}$, $\gamma_M = 68.98^{\circ}$, $GM = 5.84\,\mathrm{dB}$, $0$ RHP closed-loop poles.
 
 \begin{figure}[H]
     \centering
@@ -40,4 +40,4 @@ $K_P = 1 / 6.325$ & $\mathbf{0.1581}$ \\
     \label{fig:task3-verify}
 \end{figure}
 
-\paragraph{Hardware (Test~3b, $0.8\,\mathrm{m/s}$ square).} Mission repeated $4\times$: \texttt{vel=0.8 : dist=1 ; vel=0.8, tr=0.2 : turn=90}. Robot completed all four sides and four turns without falling. Peak tilt $+25.5^{\circ}$ (at corner acceleration), peak motor voltage $7.31\,\mathrm{V}$ ($81\,\%$ of the $\pm 9\,\mathrm{V}$ budget), cumulative heading error $0.06\,\%$. \textit{XY trajectory in App.~\ref{app:task3-xy}; \href{https://youtu.be/yzdvBDtpQd8}{video of the run}.}
+\paragraph{Hardware (Test~3b, $0.8\,\mathrm{m/s}$ square).} The mission was repeated $4\times$: \texttt{vel=0.8 : dist=1 ; vel=0.8, tr=0.2 : turn=90}. The robot completed all four sides and four turns without falling. Peak tilt was $+25.5^{\circ}$ at the corner accelerations, peak motor voltage $7.31\,\mathrm{V}$ ($81\,\%$ of the $\pm 9\,\mathrm{V}$ budget), and cumulative heading error $0.06\,\%$. \textit{XY trajectory in App.~\ref{app:task3-xy}; \href{https://youtu.be/yzdvBDtpQd8}{video of the run}.}
