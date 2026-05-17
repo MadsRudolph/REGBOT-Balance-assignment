@@ -12,10 +12,9 @@
 \textbf{R3.} & Place the PI zero at $\tau_i = N_i/\omega_c$ (phase contribution $\arctan(N_i) - 90^{\circ} = -18.4^{\circ}$ at $\omega_c$). \\
 \textbf{R4.} & Phase balance -- if combined plant$+$PI phase $< -180^{\circ} + \gamma_M$ at $\omega_c$, add a Lead. \\
 \textbf{R5.} & $K_P = 1 / |C_{\mathrm{shape}}(j\omega_c)\,G(j\omega_c)|$ -- crosses $0\,\mathrm{dB}$ at $\omega_c$. \\
-\textbf{R6.} & Verify with \texttt{margin(L)}, closed-loop step, hardware. \\
+\textbf{R6.} & Verify with \texttt{margin(L)}, closed-loop step, on hardware. \\
 \end{tabular}
 \end{center}
-
 Task~2 (balance) prepends two extra steps because $G_{tilt}$ has an RHP pole: a sign flip and a ``post-integrator'' at $|G_{tilt}|$'s magnitude peak (Method~2). The standard recipe then runs on the reshaped plant.
 
 \begin{figure}[H]

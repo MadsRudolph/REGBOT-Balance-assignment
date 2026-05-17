@@ -1,10 +1,9 @@
 \section{Introduction}
 \label{sec:introduction}
 
-The REGBOT is a two-wheeled, self-balancing robot -- an inverted pendulum on wheels. Without active control it falls over. The assignment is to design a controller that keeps it upright, drives it forward at a commanded speed, and moves it to a target position.
-
-We solve this with a four-loop cascade, designed from the inside out:
-
+The REGBOT is a two-wheeled, self-balancing robot -- an inverted pendulum on wheels. Without active control it falls over. The assignment is to design a controller that keeps it upright, drives it forward at a commanded speed, and moves it to a target position.\\
+\noindent We solve this with a four-loop cascade, designed from the inside out:
+\\ \\
 \begin{enumerate}[leftmargin=*,nosep]
     \item \textbf{Wheel-speed PI} (innermost) -- turns a wheel-velocity reference into a motor voltage.
     \item \textbf{Balance PILead + post-PI} -- holds the body upright despite the pendulum being open-loop unstable. Uses Lecture~10 Method~2.

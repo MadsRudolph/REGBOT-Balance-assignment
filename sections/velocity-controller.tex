@@ -1,7 +1,7 @@
 \section{Velocity Controller (Task 3)}
 \label{sec:velocity}
 
-\paragraph{What's special.} An RHP zero at $+8.51\,\mathrm{rad/s}$ caps the achievable bandwidth: rule-of-thumb $\omega_c \leq z/5 \approx 1.7\,\mathrm{rad/s}$. Otherwise the standard recipe (§\ref{sec:architecture}) applies directly.
+\paragraph{What's special.} A RHP zero at $+8.51\,\mathrm{rad/s}$ caps the achievable bandwidth: rule-of-thumb $\omega_c \leq z/5 \approx 1.7\,\mathrm{rad/s}$. Otherwise the standard recipe (§\ref{sec:architecture}) applies directly.
 
 \paragraph{Plant (R1).} Linearise $\theta_{\mathrm{ref}} \to v$ with Tasks~1+2 closed: 9th-order $G_{vel,\mathrm{outer}}$, $0$ RHP poles (the balance loop took care of those), one RHP zero at $+8.51\,\mathrm{rad/s}$ (non-minimum phase -- wheels roll backward to tilt forward), plus a free integrator inherited from Task~2's post-integrator.
 

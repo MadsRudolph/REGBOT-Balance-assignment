@@ -49,9 +49,7 @@ $K_P$ & $\mathbf{1.1999}$ \\
 \[
 C_{\mathrm{tilt}}(s) = -1.1999 \cdot \frac{0.1245s + 1}{0.1245s} \cdot \frac{0.2s + 1}{0.2s} \cdot (0.0442s + 1).
 \]
-
-The Simulink \texttt{Tilt\_Controller} subsystem implements this stack in series, with $\tau_d \cdot \mathrm{gyro}$ summed onto $\mathrm{pitch}$ on the measurement side so the Lead has no derivative kick on $\theta_{\mathrm{ref}}$.
-
+\noindent The Simulink \texttt{Tilt\_Controller} subsystem implements this stack in series, with $\tau_d \cdot \mathrm{gyro}$ summed onto $\mathrm{pitch}$ on the measurement side so the Lead has no derivative kick on $\theta_{\mathrm{ref}}$.
 \paragraph{Verify (R6).} \texttt{margin(L\_tilt)}: $\omega_c = 15.00$, $\gamma_M = 60.00^{\circ}$, $GM = -5.58\,\mathrm{dB}$ (negative GM is the \emph{lower} bound on $|K|$ for unstable plants), $0$ RHP closed-loop poles. Linear IC release from $\theta_0 = 10^{\circ}$ settles in $\mathbf{1.34\,s}$ with $\sim 6.6^{\circ}$ undershoot (RHP-zero signature).
 
 \begin{figure}[H]
