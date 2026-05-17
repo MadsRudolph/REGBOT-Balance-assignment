@@ -70,4 +70,4 @@ C_{\mathrm{tilt}}(s) = -1.1999 \cdot \frac{0.1245s + 1}{0.1245s} \cdot \frac{0.2
     \label{fig:task2-verify}
 \end{figure}
 
-\paragraph{Hardware (Test~3a).} \texttt{vel=0, bal=1, log=15 : time=10}: the robot was held upright, balance enabled, then released. It held the full $10\,\mathrm{s}$ with a drift of $\mathbf{0.343\,m}$ (spec $\leq 0.5$ \checkmark), which confirms the closed loop is stable on the physical plant. \emph{Firmware:} \texttt{[cbal] kp} must be entered as $\mathbf{-1.1999}$, because the firmware does not absorb Method~2's sign internally (a positive $K_P$ caused a runaway in the first campaign).
+\paragraph{Hardware (Test~3a).} \texttt{vel=0, bal=1, log=15 : time=10}: the robot was held upright, balance enabled, then released. It held the full $10\,\mathrm{s}$ with a drift of $\mathbf{0.343\,m}$ (spec $\leq 0.5$ \checkmark), which confirms the closed loop is stable on the physical plant. \emph{Firmware:} \texttt{[cbal] kp} must be entered as $\mathbf{-1.1999}$, because the firmware does not absorb Method~2's sign internally (a positive $K_P$ caused a runaway in the first tests).
