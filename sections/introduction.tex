@@ -1,15 +1,15 @@
 \section{Introduction}
 \label{sec:introduction}
 
-The REGBOT is a two-wheeled, self-balancing robot -- an inverted pendulum on wheels. Without active control it falls over. The assignment is to design a controller that keeps it upright, drives it forward at a commanded speed, and moves it to a target position.
+The REGBOT is a two-wheeled self-balancing robot, essentially an inverted pendulum on wheels, so it falls over the moment the control is switched off. The assignment was to design a controller that keeps it upright, drives it forward at a commanded speed, and moves it to a target position.
 
-We solve this with a four-loop cascade, designed from the inside out:
+We solved this with a four-loop cascade that we designed from the inside out:
 
 \begin{enumerate}[leftmargin=*,nosep]
-    \item \textbf{Wheel-speed PI} (innermost) -- turns a wheel-velocity reference into a motor voltage.
-    \item \textbf{Balance PILead + post-PI} -- holds the body upright despite the pendulum being open-loop unstable. Uses Lecture~10 Method~2.
-    \item \textbf{Velocity PI} -- commands the tilt angle that produces the requested forward speed.
-    \item \textbf{Position P} (outermost) -- commands the velocity that closes a target-position step.
+    \item \textbf{Wheel-speed PI} (innermost), which turns a wheel-velocity reference into a motor voltage.
+    \item \textbf{Balance PILead + post-PI}, which holds the body upright even though the pendulum is open-loop unstable. This is where we use Method~2 from Lecture~10.
+    \item \textbf{Velocity PI}, which commands the tilt angle that produces the requested forward speed.
+    \item \textbf{Position P} (outermost), which commands the velocity that closes a target-position step.
 \end{enumerate}
 
-\noindent Each loop is designed analytically with frequency-domain phase balance (Lec.~8/9), verified in Simulink (Simscape Multibody), and validated on the physical robot.
+\noindent Each loop was designed analytically with the frequency-domain phase balance from Lectures~8 and~9, and then verified both in Simulink (Simscape Multibody) and on the physical robot.

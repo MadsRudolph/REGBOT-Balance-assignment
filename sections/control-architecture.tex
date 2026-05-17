@@ -1,9 +1,9 @@
 \section{Control Architecture}
 \label{sec:architecture}
 
-\paragraph{Cascade.} Position $\to$ velocity $\to$ tilt $\to$ wheel-velocity $\to$ motor voltage. Each outer loop sees the closed-loop response of everything inside it as its plant. The two raw plants we identify by linearising \texttt{regbot\_1mg.slx} are $G_{wv}(s)$ (motor voltage $\to$ wheel velocity, used for Task~1) and $G_{tilt}(s)$ (velocity reference $\to$ tilt angle with Task~1 closed, used for Task~2). $G_{tilt}$ has one RHP pole at $\approx +8.9\,\mathrm{rad/s}$ -- the falling mode -- so by $Z = N + P$ Nyquist requires one CCW encirclement of $(-1,0)$.
+\paragraph{Cascade.} Reading from the reference inward, the chain is position $\to$ velocity $\to$ tilt $\to$ wheel-velocity $\to$ motor voltage, and each outer loop sees the closed-loop response of everything inside it as its plant. We identify the two raw plants by linearising \texttt{regbot\_1mg.slx}: $G_{wv}(s)$ (motor voltage $\to$ wheel velocity, used for Task~1) and $G_{tilt}(s)$ (velocity reference $\to$ tilt angle with Task~1 closed, used for Task~2). $G_{tilt}$ has one RHP pole at $\approx +8.9\,\mathrm{rad/s}$, the falling mode, so by $Z = N + P$ Nyquist requires one CCW encirclement of $(-1,0)$.
 
-\paragraph{Shared design recipe.} Tasks~1, 3, and~4 follow the same six-step PI-Lead procedure from Lec.~8/9; each task section then plugs in its own numbers.
+\paragraph{Shared design recipe.} Tasks~1, 3, and~4 all follow the same six-step PI-Lead procedure from Lectures~8 and~9, and each task section then fills in its own numbers.
 
 \begin{center}\small
 \begin{tabular}{rl}
@@ -16,7 +16,7 @@
 \end{tabular}
 \end{center}
 
-Task~2 (balance) prepends two extra steps because $G_{tilt}$ has an RHP pole: a sign flip and a ``post-integrator'' at $|G_{tilt}|$'s magnitude peak (Method~2). The standard recipe then runs on the reshaped plant.
+Task~2 (balance) needs two extra steps first, because $G_{tilt}$ has an RHP pole: a sign flip and a ``post-integrator'' at the magnitude peak of $|G_{tilt}|$ (this is Method~2). The standard recipe then runs on the reshaped plant.
 
 \begin{figure}[H]
     \centering
